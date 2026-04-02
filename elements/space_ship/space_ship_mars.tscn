@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://co516i3v8or2b"]
+
+[ext_resource type="Script" path="res://elements/space_ship/pivot.gd" id="1_7i8tu"]
+[ext_resource type="Texture2D" uid="uid://cdx74i82lwofg" path="res://assets/space_ship.png" id="2_4fd77"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fypb4"]
+radius = 16.0
+
+[node name="SpaceShipMars" type="Node2D" unique_id=2082889787]
+
+[node name="Pivot" type="Node2D" parent="." unique_id=1750294447]
+script = ExtResource("1_7i8tu")
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="Pivot" unique_id=905194924]
+position = Vector2(50, 0)
+scale = Vector2(0.5, 0.5)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pivot/CharacterBody2D" unique_id=1539476307]
+position = Vector2(0, 2)
+shape = SubResource("CircleShape2D_fypb4")
+
+[node name="Sprite2D" type="Sprite2D" parent="Pivot/CharacterBody2D" unique_id=945177097]
+rotation = 1.5708
+texture = ExtResource("2_4fd77")
