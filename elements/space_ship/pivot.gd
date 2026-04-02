@@ -1,14 +1,61 @@
 extends Node2D
 
-const MAX_ROTATION_SPEED = 3.0
-const ACCELERATION = 10.0
+const ROCKET_SCENE = preload("res://elements/rocket/rocket.tscn")
+
+const SPEED = 300.0
+
+func _physics_process(delta: float):
+	if Input.is_action_just_pressed("ui_accept"):
+		shot()
+
+	_manage_pivot(delta)
+	#_manage_movement(delta) #TBC - this doesn't work great
+
+
+func _manage_movement(delta: float) -> void:
+	# var directionX = Input.get_axis("ui_left", "ui_right")
+	# velocity.x = directionX * SPEED
+	var directionY = Input.get_axis("ui_up", "ui_down")
+	$SpaceShip.velocity.y = directionY * SPEED
+	$SpaceShip.move_and_slide()
+
+func shot():
+	var rocket = ROCKET_SCENE.instantiate()
+	var offset = Vector2.UP.rotated(rotation) * 30.0
+	rocket.global_position = $SpaceShip.global_position + offset
+	rocket.rotation = rotation
+	add_child(rocket)
+
+func take_damage():
+	Globals.change_lives(-1)
+
+
+# Number of discrete positions around the circle
+const STEPS = 128
+const STEP_ANGLE = TAU / STEPS
+
+# Seconds between each step tick (lower = faster)
+const TICK_INTERVAL = 0.12
+const ACCELERATION = 16.0
 const DAMPING = 3.0
+const MAX_SPEED = 3.0
 
 var angular_velocity = 0.0
+var tick_timer = 0.0
+var current_step = 0
 
-func _physics_process(delta: float) -> void:
-    var direction = Input.get_axis("ui_left", "ui_right")
-    angular_velocity += direction * ACCELERATION * delta
-    angular_velocity = move_toward(angular_velocity, 0.0, DAMPING * delta)
-    angular_velocity = clamp(angular_velocity, -MAX_ROTATION_SPEED, MAX_ROTATION_SPEED)
-    rotation += angular_velocity * delta
+func _manage_pivot(delta: float) -> void:
+	var direction = Input.get_axis("ui_left", "ui_right")
+	angular_velocity += direction * ACCELERATION * delta
+	angular_velocity = move_toward(angular_velocity, 0.0, DAMPING * delta)
+	angular_velocity = clamp(angular_velocity, -MAX_SPEED, MAX_SPEED)
+
+	tick_timer += abs(angular_velocity) * delta
+	if tick_timer >= TICK_INTERVAL:
+		tick_timer = fmod(tick_timer, TICK_INTERVAL)
+		if angular_velocity > 0.0:
+			current_step += 1
+		elif angular_velocity < 0.0:
+			current_step -= 1
+		current_step = posmod(current_step, STEPS)
+		rotation = current_step * STEP_ANGLE

@@ -1,16 +1,15 @@
 # V1 = Radial = Planet in the centre and you circle it
-1. Add a planet
-2. Camera needs to move to follow the player as they circle the planet
+✅ 1. Add a planet
+✅ 2. Camera needs to move to follow the player as they circle the planet
 
 
-- Minimap
 # V2 = Once you complete it you move to the next planet (which is maybe a touch harder)
 - Random environment generation
     - Different planets 
     - Once you clear a planet it loads a new one\
     - Planets have different colours
     - Varying level of difficulty
-
+    - Minimap
 
 # V3 = Mind Control
 - Alternative win condition (TBC?)

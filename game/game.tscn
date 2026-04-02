@@ -6,8 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://dybtgfdhf7ml4" path="res://elements/wall/wall.tscn" id="3_gr16u"]
 [ext_resource type="PackedScene" uid="uid://f1c2mo3r7snn" path="res://elements/enemy_group/enemy_group.tscn" id="4_de5wo"]
 [ext_resource type="PackedScene" uid="uid://dbry33qqots3s" path="res://elements/enemy_bullet/enemy_bullet.tscn" id="5_7u0ar"]
+[ext_resource type="PackedScene" uid="uid://co516i3v8or2b" path="res://elements/space_ship/space_ship_mars.tscn" id="7_u5opy"]
 [ext_resource type="PackedScene" uid="uid://ct201yc8t5q7u" path="res://elements/planet/planet.tscn" id="8_y36n6"]
-[ext_resource type="PackedScene" uid="uid://bqriehdjgjf4v" path="res://elements/space_ship/space_ship_mars.tscn" id="7_u5opy"]
 
 [node name="Game" type="Node2D" unique_id=145701423]
 script = ExtResource("1_2fm81")
@@ -21,6 +21,8 @@ texture = ExtResource("1_6celb")
 region_enabled = true
 region_rect = Rect2(0, 0, 256, 240)
 
+[node name="Planet" parent="." unique_id=556243693 instance=ExtResource("8_y36n6")]
+position = Vector2(128, 135)
 
 [node name="Wall" parent="." unique_id=24896398 instance=ExtResource("3_gr16u")]
 position = Vector2(-7.02, 0)
@@ -35,9 +37,4 @@ position = Vector2(19, -50)
 position = Vector2(155, 81)
 
 [node name="SpaceShipMars" parent="." unique_id=2082889787 instance=ExtResource("7_u5opy")]
-position = Vector2(131, 134)
-
-
-[node name="Planet" parent="." unique_id=556243693 instance=ExtResource("8_y36n6")]
-position = Vector2(127.63, 134.36)
-
+position = Vector2(128, 135)

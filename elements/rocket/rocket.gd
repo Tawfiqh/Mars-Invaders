@@ -5,7 +5,8 @@ const SPEED = 200.0
 
 
 func _physics_process(delta):
-	var collision = move_and_collide(Vector2.UP * SPEED * delta)
+	var direction = Vector2.UP.rotated(rotation)
+	var collision = move_and_collide(direction * SPEED * delta)
 	if collision:
 		var collider = collision.get_collider()
 		if collider.has_method("destroy"):
