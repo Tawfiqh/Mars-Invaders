@@ -8,8 +8,12 @@ func _physics_process(delta: float):
 	if Input.is_action_just_pressed("ui_accept"):
 		shot()
 
-	var direction = Input.get_axis("ui_left", "ui_right")
-	velocity.x = direction * SPEED
+	var directionX = Input.get_axis("ui_left", "ui_right")
+	velocity.x = directionX * SPEED
+	
+	var directionY = Input.get_axis("ui_up", "ui_down")
+	velocity.y = directionY * SPEED
+	
 	move_and_slide()
 
 func shot():
