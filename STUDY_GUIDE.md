@@ -65,8 +65,8 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### Game (`game/game.gd`)
 - **What:** Orchestrates win/loss conditions and level progression.
-- **How:** Listens to `lives_changed` and `enemy_died` signals. If lives reach 0, shows game-over screen. If all enemies are destroyed, emits `level_cleared` and reloads the scene after a 1-second pause — the planet script picks a new random appearance on `_ready()`, so each reload is a fresh level with a different planet.
-- **Example:** Player kills last enemy → `_check_game_state()` sees ≤1 enemy in group → emits `level_cleared` → waits 1s → `reload_current_scene()` → new planet, 12 fresh enemies, points and lives carry over.
+- **How:** Listens to `lives_changed` and `enemy_died` signals. If lives reach 0, shows game-over screen. If all enemies are destroyed, emits `level_cleared`, waits 1 second, then swaps out just the Planet and EnemyGroup nodes — `queue_free()` the old ones, wait a frame, then `add_child()` fresh instances. The planet script picks a random spritesheet in `_ready()`, so each new instance looks different. The player, HUD, background, and walls stay untouched.
+- **Example:** Player kills last enemy → `_check_game_state()` sees ≤1 enemy in group → emits `level_cleared` → waits 1s → `_start_next_level()` frees old planet/enemies, spawns new ones → player keeps position, points, and lives.
 
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
