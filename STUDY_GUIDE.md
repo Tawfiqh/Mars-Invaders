@@ -10,7 +10,8 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 4. The player shoots rockets **outward** (away from the planet), which travel through the enemy orbit and can destroy them.
 5. Enemies shoot bullets **outward from the planet** (in the direction from planet center through the enemy), which travel through the player's orbit and can damage the ship.
 6. As enemies die, the orbit speed increases — making surviving enemies harder to hit.
-7. Game ends when the player runs out of lives or clears all enemies.
+7. When all enemies are destroyed, the scene reloads with a new random planet and fresh enemies — points and lives carry over.
+8. Game ends when the player runs out of lives.
 
 ## Key Decisions & Why
 
@@ -63,15 +64,16 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **How:** Direction is `Vector2.UP.rotated(rotation)` — the rotation is inherited from the pivot, so "up" is "away from planet center". Calls `destroy()` on anything it hits.
 
 ### Game (`game/game.gd`)
-- **What:** Orchestrates game-over conditions.
-- **How:** Listens to `lives_changed` and `enemy_died` signals. If lives reach 0 or only 1 enemy remains, shows game-over screen.
+- **What:** Orchestrates win/loss conditions and level progression.
+- **How:** Listens to `lives_changed` and `enemy_died` signals. If lives reach 0, shows game-over screen. If all enemies are destroyed, emits `level_cleared` and reloads the scene after a 1-second pause — the planet script picks a new random appearance on `_ready()`, so each reload is a fresh level with a different planet.
+- **Example:** Player kills last enemy → `_check_game_state()` sees ≤1 enemy in group → emits `level_cleared` → waits 1s → `reload_current_scene()` → new planet, 12 fresh enemies, points and lives carry over.
 
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
 - **Fixed planet center assumption:** The enemy `shot()` function assumes `get_parent().global_position` is the planet center. If the scene hierarchy changes, bullets will fly in wrong directions.
 - **No collision with planet:** Enemy bullets pass through the planet (collision mask doesn't include environment layer). This is intentional but could look odd visually.
 - **Enemy sprites rotate with the group:** Enemies don't counter-rotate to always face outward. They tumble as they orbit — charming but not precisely "facing the player."
-- **Game over at 1 enemy:** The `<= 1` check means the game ends when the second-to-last enemy dies, leaving one alive. This might be intentional (victory condition) or an off-by-one.
+- **Win check at ≤1 enemy:** The `<= 1` check accounts for the dying enemy still being in the tree when the signal fires (it calls `queue_free()` which defers removal to end-of-frame). So "≤1 in group" effectively means "zero alive."
 
 ## Key Metrics & Results
 - **Viewport:** 256×240 pixels (NES-style resolution)
