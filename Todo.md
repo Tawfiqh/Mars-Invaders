@@ -1,7 +1,7 @@
 # V1 = Radial = Planet in the centre and you circle it
 ✅ 1. Add a planet
 ✅ 2. Camera needs to move to follow the player as they circle the planet
-
+3. Enemies cirlce the planet too!
 
 # V2 = Once you complete it you move to the next planet (which is maybe a touch harder)
 - Random environment generation
