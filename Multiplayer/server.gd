@@ -35,5 +35,5 @@ func _exit_tree() -> void:
 	tcp_server.stop()
 
 
-func _on_button_pong_pressed() -> void:
+func pong() -> void:
 	socket.send_text("Pong")

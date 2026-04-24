@@ -7,7 +7,7 @@ var socket := WebSocketPeer.new()
 
 func log_message(message: String) -> void:
 	var time: String = "[color=#aaaaaa] %s |[/color] " % Time.get_time_string_from_system()
-	%TextClient.text += time + message + "\n"
+	print(time + message + "\n")
 
 
 func _ready() -> void:
@@ -28,5 +28,5 @@ func _exit_tree() -> void:
 	socket.close()
 
 
-func _on_button_ping_pressed() -> void:
+func ping() -> void:
 	socket.send_text("Ping")

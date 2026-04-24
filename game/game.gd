@@ -1,5 +1,11 @@
 extends Node2D
 
+
+const SERVER = preload("res://Multiplayer/server.tscn")
+const CLIENT = preload("res://Multiplayer/client.tscn") # TBC - use the UUID instead
+var currentServer = null
+var currentClient = null
+
 const GAME_OVER_SCENE = preload("res://ui/game_over/game_over.tscn")
 const PLANET_SCENE = preload("res://elements/planet/planet.tscn")
 const ENEMY_GROUP_SCENE = preload("res://elements/enemy_group/enemy_group.tscn")
@@ -15,6 +21,12 @@ func _ready():
 	Events.lives_changed.connect(func(_lives): _check_game_state())
 	Events.enemy_died.connect(_check_game_state)
 
+func _process(delta: float):
+	if Input.is_action_just_pressed("ui_accept"):
+		if currentServer != null:
+			currentServer.pong()
+		if currentClient != null:
+			currentClient.ping()
 
 func _check_game_state():
 	if _level_ending:
@@ -50,3 +62,16 @@ func _start_next_level():
 	add_child(_enemy_group)
 
 	_level_ending = false
+
+
+func _start_server() -> void:
+	print("STARTING SERVER")
+	currentServer = SERVER.instantiate()
+	add_child(currentServer)
+
+
+func _start_client() -> void:
+	print("JOINING SERVER = Starting client")
+	# ip_address = $IPAddress.text
+	currentClient = CLIENT.instantiate()
+	add_child(currentClient)

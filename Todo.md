@@ -4,15 +4,28 @@
 ✅ 3. Enemies cirlce the planet too!
 
 # V1.5 (Multiplayer - p2p)
+
+- Client and server each have names
+- They log 
+- Player sends: movement + position + shots
+- Server sends whole game-state
+
 1. Multiplayer -- First person = Server (with an ip address)
 2. 2nd player = client but NOT server
-
 3. Next players join the server... -- by typing in the IP-address??
 4. - NOT just localhost
 5. Different colours!! (random colour on load)
 6. NOT shared life pool
+HTTP client, HTTP requests, WebSocket (client) and WebRTC
 
- HTTP client, HTTP requests, WebSocket (client) and WebRTC
+= SERVER = Pick one player as host - Runs the server
+    - Relay server = initialising it and then set it up as P2P
+    
+= Game state:
+    - 1a Send ENTIRE game-state (UDP - so you may lose some frames but it )
+        - 1b = send patch of what has changed... 
+    - 2b Send all updates as actions and server holds source of truth???
+    - GDC talk = https://www.reddit.com/r/Overwatch/comments/apgxco/overwatch_gameplay_architecture_and_netcode_tim/
 
 
 https://godotengine.org/asset-library/asset/2797

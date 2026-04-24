@@ -68,6 +68,12 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **How:** Listens to `lives_changed` and `enemy_died` signals. If lives reach 0, shows game-over screen. If all enemies are destroyed, emits `level_cleared`, waits 1 second, then swaps out just the Planet and EnemyGroup nodes — `queue_free()` the old ones, wait a frame, then `add_child()` fresh instances. The planet script picks a random spritesheet in `_ready()`, so each new instance looks different. The player, HUD, background, and walls stay untouched.
 - **Example:** Player kills last enemy → `_check_game_state()` sees ≤1 enemy in group → emits `level_cleared` → waits 1s → `_start_next_level()` frees old planet/enemies, spawns new ones → player keeps position, points, and lives.
 
+### Multiplayer server / client (WIP)
+- **What:** A local WebSocket test server (port 9080) and a client that connects to `ws://localhost:9080`.
+- **How:** `game.gd` calls `SERVER.instantiate()` / `CLIENT.instantiate()` and `add_child()`. The server uses `TCPServer` and `WebSocketPeer.accept_stream()`; the client uses `WebSocketPeer.connect_to_url()`. `pong()` / `ping()` send text over the open socket.
+- **Example:** Start server from the HUD button, then press the accept key — the game calls `server.pong()`, which sends the string `"Pong"` if the socket is open.
+- **Scene wiring:** The root node in `Multiplayer/server.tscn` must have `server.gd` attached. If the scene is only `[node name="Server" type="Node"]` with no `script = ...`, Godot instantiates a plain `Node`, and `server.pong()` errors with *Nonexistent function 'pong' in base 'Node'* — the method lives on the script, not on `Node` itself.
+
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
 - **Fixed planet center assumption:** The enemy `shot()` function assumes `get_parent().global_position` is the planet center. If the scene hierarchy changes, bullets will fly in wrong directions.
