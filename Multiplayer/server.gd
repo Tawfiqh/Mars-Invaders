@@ -5,6 +5,7 @@ const PORT = 9080
 
 var tcp_server := TCPServer.new()
 var socket := WebSocketPeer.new()
+var _name: String = ""
 
 func log_message(message: String) -> void:
 	var time: String = Time.get_time_string_from_system()
@@ -12,6 +13,8 @@ func log_message(message: String) -> void:
 
 
 func _ready() -> void:
+	_name = Globals._pick_random_names()
+	log_message("Server ready — name: %s" % _name)
 	if tcp_server.listen(PORT) != OK:
 		log_message("Unable to start server.")
 		set_process(false)
@@ -36,4 +39,4 @@ func _exit_tree() -> void:
 
 
 func pong() -> void:
-	socket.send_text("Pong")
+	socket.send_text("Pong [from %s]" % _name)

@@ -4,6 +4,8 @@ extends Node
 var websocket_url: String = "ws://localhost:9080"
 
 var socket := WebSocketPeer.new()
+var _name: String = ""
+
 
 func log_message(message: String) -> void:
 	var time: String = "[color=#aaaaaa] %s |[/color] " % Time.get_time_string_from_system()
@@ -11,6 +13,8 @@ func log_message(message: String) -> void:
 
 
 func _ready() -> void:
+	_name = Globals._pick_random_names()
+	log_message("Client ready — name: %s" % _name)
 	if socket.connect_to_url(websocket_url) != OK:
 		log_message("Unable to connect.")
 		set_process(false)
@@ -29,4 +33,4 @@ func _exit_tree() -> void:
 
 
 func ping() -> void:
-	socket.send_text("Ping")
+	socket.send_text("Ping [from %s]" % _name)
