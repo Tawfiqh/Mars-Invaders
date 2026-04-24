@@ -70,9 +70,10 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### Multiplayer server / client (WIP)
 - **What:** A local WebSocket test server (port 9080) and a client that connects to `ws://localhost:9080`.
-- **How:** `game.gd` calls `SERVER.instantiate()` / `CLIENT.instantiate()` and `add_child()`. The server uses `TCPServer` and `WebSocketPeer.accept_stream()`; the client uses `WebSocketPeer.connect_to_url()`. `pong()` / `ping()` send text over the open socket.
-- **Example:** Start server from the HUD button, then press the accept key — the game calls `server.pong()`, which sends the string `"Pong"` if the socket is open.
-- **Scene wiring:** The root node in `Multiplayer/server.tscn` must have `server.gd` attached. If the scene is only `[node name="Server" type="Node"]` with no `script = ...`, Godot instantiates a plain `Node`, and `server.pong()` errors with *Nonexistent function 'pong' in base 'Node'* — the method lives on the script, not on `Node` itself.
+- **How:** `game.gd` calls `SERVER.instantiate()` / `CLIENT.instantiate()` and `add_child()`. The server uses `TCPServer` and `WebSocketPeer.accept_stream()`; the client uses `WebSocketPeer.connect_to_url()`. On `_ready()`, each side picks a random **callsign** from `Globals` name pairs and logs it.
+- **When a client joins:** The server tracks WebSocket state with `_prev_ready_state`. When the peer moves into `STATE_OPEN`, it emits `websocket_peer_opened`. `game.gd` connects that signal to `_spawn_remote_player_ship()`, which instantiates `player_space_ship.tscn`, sets `Pivot.is_remote = true` (no local input, no random tint on `_ready`), and parents it under `Game` at the same position as the host ship. The client, on first `STATE_OPEN`, calls `send_player_join()`, which JSON-encodes `{"join":{"r","g","b","a"}}` from `game.get_local_player_color()` (the joining player's ship colour). The server parses that payload and emits `remote_player_join_received(color)`; the game applies it with `Pivot.set_player_color()`.
+- **Example:** Host clicks **Start Server**, joiner clicks **Join Server** — host sees a second ship appear and its modulate match the joiner's HUD ship colour.
+- **Scene wiring:** `Multiplayer/Server.tscn` and `Multiplayer/Client.tscn` must reference `server.gd` / `client.gd` on the root `Node`. A wrong script path yields a plain `Node` and missing methods at runtime.
 
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
@@ -80,6 +81,8 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **No collision with planet:** Enemy bullets pass through the planet (collision mask doesn't include environment layer). This is intentional but could look odd visually.
 - **Enemy sprites rotate with the group:** Enemies don't counter-rotate to always face outward. They tumble as they orbit — charming but not precisely "facing the player."
 - **Win check at ≤1 enemy:** The `<= 1` check accounts for the dying enemy still being in the tree when the signal fires (it calls `queue_free()` which defers removal to end-of-frame). So "≤1 in group" effectively means "zero alive."
+- **One remote WebSocket peer:** The server holds a single `WebSocketPeer`. Only one joining client is supported; a second connection can replace or fight the first depending on timing.
+- **Remote ship lifecycle:** When the joiner disconnects, the host does not remove the spawned `RemotePlayerSpaceShip`. Reconnecting may not spawn again until you restart the server or clear that node.
 
 ## Key Metrics & Results
 - **Viewport:** 256×240 pixels (NES-style resolution)

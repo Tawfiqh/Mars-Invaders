@@ -3,8 +3,26 @@ extends Node2D
 const ROCKET_SCENE = preload("res://elements/rocket/rocket.tscn")
 
 const SPEED = 300.0
+var color: Color
 
+## When true, this ship is controlled by another machine — no local input or random colour.
+var is_remote: bool = false
+
+func _ready():
+	if not is_remote:
+		random_color()
+
+func random_color():
+	color = Color.from_hsv(randf(), 1.0, 1.0)
+	$SpaceShip.modulate = color
+func set_player_color(newColor: Color):
+	color = newColor
+	$SpaceShip.modulate = color
+
+	
 func _physics_process(delta: float):
+	if is_remote:
+		return
 	if Input.is_action_just_pressed("ui_accept"):
 		shot()
 
