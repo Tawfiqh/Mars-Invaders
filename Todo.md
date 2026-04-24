@@ -4,13 +4,20 @@
 ✅ 3. Enemies cirlce the planet too!
 
 # V1.5 (Multiplayer - p2p)
-1. Multiplayer -- N ships LOCALHOST
-2. First person = Server (with an ip address)
+1. Multiplayer -- First person = Server (with an ip address)
+2. 2nd player = client but NOT server
+
 3. Next players join the server... -- by typing in the IP-address??
 4. - NOT just localhost
 5. Different colours!! (random colour on load)
+6. NOT shared life pool
 
+ HTTP client, HTTP requests, WebSocket (client) and WebRTC
+
+
+https://godotengine.org/asset-library/asset/2797
 # V1.6 (Hosted in the cloud but still p2p with a cloud instance...)
+https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_dedicated_servers.html#doc-exporting-for-dedicated-servers
 1. Some sort of lobby / matchmaking??? 
 2. or does everyone just join the same instance???
 3. 

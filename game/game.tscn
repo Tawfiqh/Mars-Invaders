@@ -8,6 +8,8 @@
 [ext_resource type="PackedScene" uid="uid://dbry33qqots3s" path="res://elements/enemy_bullet/enemy_bullet.tscn" id="5_7u0ar"]
 [ext_resource type="PackedScene" uid="uid://co516i3v8or2b" path="res://elements/player_space_ship/player_space_ship.tscn" id="7_u5opy"]
 [ext_resource type="PackedScene" uid="uid://ct201yc8t5q7u" path="res://elements/planet/planet.tscn" id="8_y36n6"]
+[ext_resource type="Script" uid="uid://bt3tkils6mk4p" path="res://server/client.gd" id="9_j8tme"]
+[ext_resource type="Script" uid="uid://cy7l8ekpkbmu0" path="res://server/server.gd" id="10_3vho3"]
 
 [node name="Game" type="Node2D" unique_id=145701423]
 script = ExtResource("1_2fm81")
@@ -38,3 +40,9 @@ position = Vector2(155, 81)
 
 [node name="Player SpaceShip" parent="." unique_id=2082889787 instance=ExtResource("7_u5opy")]
 position = Vector2(128, 135)
+
+[node name="Client" type="Node" parent="." unique_id=166080156]
+script = ExtResource("9_j8tme")
+
+[node name="Server" type="Node" parent="." unique_id=92042032]
+script = ExtResource("10_3vho3")
