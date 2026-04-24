@@ -1,7 +1,20 @@
 # V1 = Radial = Planet in the centre and you circle it
 ✅ 1. Add a planet
 ✅ 2. Camera needs to move to follow the player as they circle the planet
-3. Enemies cirlce the planet too!
+✅ 3. Enemies cirlce the planet too!
+
+# V1.5 (Multiplayer - p2p)
+1. Multiplayer -- N ships LOCALHOST
+2. First person = Server (with an ip address)
+3. Next players join the server... -- by typing in the IP-address??
+4. - NOT just localhost
+5. Different colours!! (random colour on load)
+
+# V1.6 (Hosted in the cloud but still p2p with a cloud instance...)
+1. Some sort of lobby / matchmaking??? 
+2. or does everyone just join the same instance???
+3. 
+
 
 # V2 = Once you complete it you move to the next planet (which is maybe a touch harder)
 - Random environment generation
