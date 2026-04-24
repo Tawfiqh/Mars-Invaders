@@ -45,13 +45,13 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Example:** Player presses right → `angular_velocity` increases → after enough accumulated time, `current_step` goes from 0 to 1 → rotation snaps to `TAU/128`.
 
 ### EnemyGroup (`elements/enemy_group/enemy_group.gd`)
-- **What:** Orbits all enemies around the planet as a single rotating formation.
-- **How:** Placed at the planet center. Each frame, `rotation += orbit_speed * delta`. When an enemy dies, `orbit_speed` increases by `ORBIT_SPEED_BOOST` (0.06 rad/s). A `ShotTimer` fires every 3 seconds, picking a random enemy to shoot.
-- **Example:** Base speed 0.4 rad/s → one full revolution in ~15.7 seconds. After 5 kills: 0.4 + 5×0.06 = 0.7 rad/s → ~9 seconds per revolution.
+- **What:** Orbits all enemies around the planet as a single rotating formation, spawning them dynamically based on the player's score.
+- **How:** On `_ready()`, calculates enemy count: `BASE (12) + points / 6`, capped at 36. Distributes enemies evenly across concentric rings (6 per ring, starting at radius 60, spaced 20px apart). Alternating rings are staggered by half a step for better coverage. Each frame, `rotation += orbit_speed * delta`. When an enemy dies, `orbit_speed` increases by 0.06 rad/s. A `ShotTimer` fires every 3 seconds, picking a random surviving enemy to shoot.
+- **Example:** At 0 points → 12 enemies on 2 rings (60px, 80px). At 30 points → 17 enemies on 3 rings (60, 80, 100px). At 144+ points → 36 enemies (max) on 6 rings.
 
 ### Enemy (`elements/enemy/enemy.gd`)
 - **What:** A single invader in the formation.
-- **How:** Passive — it doesn't move itself. Position is set in the scene and the parent group's rotation carries it. When `shot()` is called, it calculates the outward direction from the planet center, spawns a bullet there, and sets the bullet's direction and rotation.
+- **How:** Passive — it doesn't move itself. Spawned by `EnemyGroup` at a calculated ring position, then carried by the parent group's rotation. When `shot()` is called, it calculates the outward direction from the planet center, spawns a bullet there, and sets the bullet's direction and rotation.
 - **Example:** Enemy at global position (208, 135), planet center at (128, 135) → outward direction is `(1, 0)` (rightward). Bullet spawns at (218, 135) and flies right.
 
 ### Enemy Bullet (`elements/enemy_bullet/enemy_bullet.gd`)
@@ -78,8 +78,9 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 ## Key Metrics & Results
 - **Viewport:** 256×240 pixels (NES-style resolution)
 - **Player orbit radius:** ~36px from planet center
-- **Enemy orbit radii:** 60px (inner ring, 6 enemies) and 80px (outer ring, 6 enemies)
+- **Enemy orbit radii:** Rings at 60, 80, 100, 120… px (6 enemies per ring, added as count grows)
+- **Enemy count scaling:** 12 base + 1 per 6 points, capped at 36
 - **Base enemy orbit speed:** 0.4 rad/s (~15.7s per revolution)
-- **Max enemy orbit speed:** ~1.06 rad/s after 11 kills (~5.9s per revolution)
+- **Orbit speed boost per kill:** +0.06 rad/s
 - **Player discrete positions:** 128 around the circle (2.8° per step)
 - **Shot interval:** Every 3 seconds, one random enemy fires
