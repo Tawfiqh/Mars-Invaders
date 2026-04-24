@@ -46,6 +46,9 @@ func _spawn_remote_player_ship(name: String) -> void:
 
 
 func _update_remote_player(newRotation: float, newColor: Color, playerName: String) -> void:
+	if currentServer != null and playerName == currentServer._name:
+		return
+		
 	print("Updating remote player: %s" % playerName)
 	if _remote_players.has(playerName):
 		var player = _remote_players[playerName]
@@ -56,10 +59,9 @@ func _update_remote_player(newRotation: float, newColor: Color, playerName: Stri
 var time_since_last_update = 0.0
 
 func _process(delta: float):
-	if time_since_last_update < 0.3:
-		time_since_last_update += delta
-		return ;
-
+	# if time_since_last_update < 0.1:
+	# 	time_since_last_update += delta
+	# 	return ;
 	time_since_last_update = 0.0
 
 	# if currentServer != null:
