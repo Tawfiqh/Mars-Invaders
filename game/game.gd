@@ -25,9 +25,14 @@ func _ready():
 
 func get_current_client_game_state() -> Dictionary:
 	var player = $"Player SpaceShip/Pivot"
+	var name = ""
+	if currentClient != null:
+		name = currentClient._name
+	if currentServer != null:
+		name = currentServer._name if name == "" else name
 	return {
 		"player": {
-			"name": currentClient._name,
+			"name": name,
 			"rotation": player.rotation,
 			"color": player.color.to_html(),
 		}
@@ -35,26 +40,38 @@ func get_current_client_game_state() -> Dictionary:
 
 
 func _spawn_remote_player_ship(name: String) -> void:
-	print("Spawning remote player ship: %s" % name)
+	var myName = ""
+	myName = currentClient._name if currentClient != null else ""
+	myName = currentServer._name if myName == "" and currentServer != null else ""
+	if myName == "":
+		return
+
+	print("MY NAME: %s - Spawning remote player ship: %s" % [myName, name])
 	if _remote_players.has(name):
 		return
 	var inst = PLAYER_SHIP_SCENE.instantiate()
 	inst.name = name
 	inst.position = Vector2(128, 135.0)
 	add_child(inst)
+	var pivot: Node2D = inst.get_node("Pivot")
+	pivot.is_remote = true
 	_remote_players[name] = inst
 
 
 func _update_remote_player(newRotation: float, newColor: Color, playerName: String) -> void:
 	if currentServer != null and playerName == currentServer._name:
 		return
-		
-	print("Updating remote player: %s" % playerName)
+	if currentClient != null and playerName == currentClient._name:
+		return
+
+	# print("Updating remote player: %s" % playerName)
+	if not _remote_players.has(playerName) and playerName != "":
+		_spawn_remote_player_ship(playerName)
 	if _remote_players.has(playerName):
 		var player = _remote_players[playerName]
 		var pivot = player.get_node("Pivot")
 		pivot.set_player_color(newColor)
-		player.rotation = newRotation
+		pivot.rotation = newRotation
 
 var time_since_last_update = 0.0
 
@@ -64,8 +81,8 @@ func _process(delta: float):
 	# 	return ;
 	time_since_last_update = 0.0
 
-	# if currentServer != null:
-	# 	currentServer.pong()
+	if currentServer != null:
+		currentServer.send_game_state(get_current_client_game_state())
 
 	if currentClient != null:
 		currentClient.send_game_state(get_current_client_game_state())
@@ -118,4 +135,5 @@ func _start_client() -> void:
 	print("JOINING SERVER = Starting client")
 	# ip_address = $IPAddress.text
 	currentClient = CLIENT.instantiate()
+	currentClient.remote_player_update.connect(_update_remote_player)
 	add_child(currentClient)

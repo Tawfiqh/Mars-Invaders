@@ -77,6 +77,6 @@ func _exit_tree() -> void:
 	socket.close()
 	tcp_server.stop()
 
-
-func pong() -> void:
-	socket.send_text("Pong [from %s]" % _name)
+func send_game_state(game_state: Dictionary) -> void:
+	var json_string := JSON.stringify(game_state)
+	socket.send_text('{"game_state": %s}' % json_string)

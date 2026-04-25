@@ -4,10 +4,10 @@
 ✅ 3. Enemies cirlce the planet too!
 
 # V1.5 (Multiplayer - p2p)
-
-- Client and server each have names
-- They log 
-- Player sends: movement + position + shots
+- ✅ Client and server each have names
+- ✅ They log 
+- ✅ Player sends: movement + position 
+- Player sends shots!
 - Server sends whole game-state
 
 1. Multiplayer -- First person = Server (with an ip address)

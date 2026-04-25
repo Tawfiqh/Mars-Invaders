@@ -3,6 +3,8 @@ extends Node
 ## The URL we will connect to.
 var websocket_url: String = "ws://localhost:9080"
 
+signal remote_player_update(rotation: float, color: Color, name: String)
+
 var socket := WebSocketPeer.new()
 var _name: String = ""
 var _has_sent_join: bool = false
@@ -33,7 +35,15 @@ func _process(_delta: float) -> void:
 			print("Sending player join")
 			send_player_join()
 		while socket.get_available_packet_count():
-			log_message(socket.get_packet().get_string_from_ascii())
+			var message = socket.get_packet().get_string_from_ascii()
+			if message.begins_with('{"game_state'):
+				var game_state = _parse_json(message)
+				if game_state.size() > 0 and game_state.has("game_state"):
+					_handle_game_state(game_state["game_state"])
+				else:
+					log_message("Invalid game state: %s" % message)
+			else:
+				log_message(message)
 	elif state == WebSocketPeer.STATE_CLOSED:
 		_has_sent_join = false
 
@@ -52,3 +62,18 @@ func send_game_state(game_state: Dictionary) -> void:
 
 func send_player_join() -> void:
 	socket.send_text('{"join": "%s"}' % _name)
+
+
+func _parse_json(message: String) -> Dictionary:
+	var json_parser = JSON.new()
+	if json_parser.parse(message) == OK:
+		return json_parser.data
+	return {}
+
+
+func _handle_game_state(game_state: Dictionary) -> void:
+	var player_data = game_state["player"]
+	var player_rotation: float = player_data["rotation"]
+	var player_color := Color(player_data["color"])
+	var player_name: String = player_data["name"]
+	remote_player_update.emit(player_rotation, player_color, player_name)
