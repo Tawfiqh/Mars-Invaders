@@ -43,10 +43,10 @@ func _process(_delta: float) -> void:
 		while socket.get_available_packet_count():
 			var message = socket.get_packet().get_string_from_ascii()
 			# log_message("Server Received message: %s" % message)
-			if message.begins_with('{"game_state'):
-				var game_state = parse_JSON(message)
-				if game_state.size() > 0 and game_state.has("game_state"):
-					handle_game_state(game_state["game_state"])
+			if message.begins_with('{"player_state'):
+				var player_state = parse_JSON(message)
+				if player_state.size() > 0 and player_state.has("player_state"):
+					handle_player_state(player_state["player_state"])
 				else:
 					log_message("Invalid game state: %s" % message)
 
@@ -61,11 +61,11 @@ func parse_JSON(message: String) -> Dictionary:
 
 
 # TBC - renmae to serevr handling player update
-func handle_game_state(game_state: Dictionary) -> void:
-	# log_message("Server Handling game state: %s" % game_state)
-	var player_rotation = game_state["player"]["rotation"]
-	var player_color = Color(game_state["player"]["color"])
-	var name = game_state["player"]["name"]
+func handle_player_state(player_state: Dictionary) -> void:
+	log_message("Server Handling game state: %s" % player_state)
+	var player_rotation = player_state["rotation"]
+	var player_color = Color(player_state["color"])
+	var name = player_state["name"]
 	remote_player_update.emit(player_rotation, player_color, name)
 
 

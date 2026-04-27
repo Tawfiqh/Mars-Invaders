@@ -3,6 +3,11 @@ extends CharacterBody2D
 
 const SPEED = 200.0
 
+var uuid: String = ""
+
+func _ready():
+	uuid = "rocket-" + str(randi())
+
 
 func _physics_process(delta):
 	var direction = Vector2.UP.rotated(rotation)
@@ -16,3 +21,10 @@ func _physics_process(delta):
 
 func _on_visible_on_screen_notifier_2d_screen_exited():
 	queue_free()
+
+func serialize_state() -> Dictionary:
+	return {
+		"rotation": rotation,
+		"position": global_position,
+		"uuid": uuid,
+	}

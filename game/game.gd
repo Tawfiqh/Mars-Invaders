@@ -18,79 +18,59 @@ var _remote_players: Dictionary = {}
 @onready var _planet: Node2D = $Planet
 @onready var _enemy_group: Node2D = $EnemyGroup
 
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Process and send current game state to server / client
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-func get_current_client_game_state() -> Dictionary:
+func get_player_game_state() -> Dictionary:
 	var player = $"Player SpaceShip/Pivot"
-	var name = ""
-	if currentClient != null:
-		name = currentClient._name
-	if currentServer != null:
-		name = currentServer._name if name == "" else name
+	var name = my_name()
+
+	var player_state: Dictionary = player.serialize_state()
+	player_state["name"] = name
+	return player_state
+
+func get_whole_game_state() -> Dictionary:
 	return {
-		"player": {
-			"name": name,
-			"rotation": player.rotation,
-			"color": player.color.to_html(),
-		}
+		"player": get_player_game_state(),
+		# "enemies": get_enemies_game_state(),
+		# "bullets": get_bullets_game_state(),
+		# "planet": get_planet_game_state(),
+		# "enemy_group": get_enemy_group_game_state(),
 	}
 
 
 var time_since_last_update = 0.0
 func _process(delta: float):
+	# Cooldown to prevent spamming the server with updates
 	if time_since_last_update < 0.1:
 		time_since_last_update += delta
 		return
-
 	time_since_last_update = 0.0
 
 	if currentServer != null:
-		currentServer.send_game_state(get_current_client_game_state())
+		currentServer.send_game_state(get_whole_game_state())
 
 	if currentClient != null:
-		currentClient.send_game_state(get_current_client_game_state())
+		currentClient.send_player_state(get_player_game_state())
 
 
-func _start_server() -> void:
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Update state from server / client
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+func my_name() -> String:
+	var name = ""
 	if currentClient != null:
-		print("STOPPING CLIENT")
-		currentClient.queue_free()
-
-	print("STARTING SERVER")
-	currentServer = SERVER.instantiate()
-	currentServer.remote_player_update.connect(_update_remote_player)
-	add_child(currentServer)
-
-
-func _start_client() -> void:
+		name = currentClient._name
 	if currentServer != null:
-		print("STOPPING SERVER")
-		currentServer.queue_free()
-
-	print("JOINING SERVER = Starting client")
-	# ip_address = $IPAddress.text
-	currentClient = CLIENT.instantiate()
-	currentClient.remote_player_update.connect(_update_remote_player)
-	add_child(currentClient)
-
-
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-# OLD Non refactored bits
-# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-func _ready():
-	Events.lives_changed.connect(func(_lives): _check_game_state())
-	Events.enemy_died.connect(_check_game_state)
-
+		name = currentServer._name
+	return name
 
 func _spawn_remote_player_ship(name: String) -> void:
-	var myName = ""
-	if currentClient != null:
-		myName = currentClient._name
-	if currentServer != null:
-		myName = currentServer._name
-	if myName == "" or name == myName:
+	if my_name() == "" or name == my_name():
 		return
 
-	print("MY NAME: %s - Spawning remote player ship: %s" % [myName, name])
+	print("MY NAME: %s - Spawning remote player ship: %s" % [my_name(), name])
 	if _remote_players.has(name):
 		return
 	var inst = PLAYER_SHIP_SCENE.instantiate()
@@ -117,6 +97,36 @@ func _update_remote_player(newRotation: float, newColor: Color, playerName: Stri
 		var pivot = player.get_node("Pivot")
 		pivot.set_player_color(newColor)
 		pivot.rotation = newRotation
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Setup server / client
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+func _start_server() -> void:
+	if currentClient != null:
+		print("STOPPING CLIENT")
+		currentClient.queue_free()
+
+	print("STARTING SERVER")
+	currentServer = SERVER.instantiate()
+	currentServer.remote_player_update.connect(_update_remote_player)
+	add_child(currentServer)
+
+
+func _start_client() -> void:
+	if currentServer != null:
+		print("STOPPING SERVER")
+		currentServer.queue_free()
+
+	print("JOINING SERVER = Starting client")
+	currentClient = CLIENT.instantiate()
+	currentClient.remote_player_update.connect(_update_remote_player)
+	add_child(currentClient)
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# OLD Non refactored bits
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+func _ready():
+	Events.lives_changed.connect(func(_lives): _check_game_state())
+	Events.enemy_died.connect(_check_game_state)
 
 
 func _check_game_state():

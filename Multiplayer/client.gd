@@ -54,9 +54,9 @@ func _exit_tree() -> void:
 	socket.close()
 
 
-func send_game_state(game_state: Dictionary) -> void:
-	var json_string := JSON.stringify(game_state)
-	socket.send_text('{"game_state": %s}' % json_string)
+func send_player_state(player_state: Dictionary) -> void:
+	var json_string := JSON.stringify(player_state)
+	socket.send_text('{"player_state": %s}' % json_string)
 
 
 func _parse_json(message: String) -> Dictionary:
