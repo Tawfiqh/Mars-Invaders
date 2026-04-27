@@ -19,10 +19,6 @@ var _remote_players: Dictionary = {}
 @onready var _enemy_group: Node2D = $EnemyGroup
 
 
-func _ready():
-	Events.lives_changed.connect(func(_lives): _check_game_state())
-	Events.enemy_died.connect(_check_game_state)
-
 func get_current_client_game_state() -> Dictionary:
 	var player = $"Player SpaceShip/Pivot"
 	var name = ""
@@ -39,11 +35,58 @@ func get_current_client_game_state() -> Dictionary:
 	}
 
 
+var time_since_last_update = 0.0
+func _process(delta: float):
+	if time_since_last_update < 0.1:
+		time_since_last_update += delta
+		return
+
+	time_since_last_update = 0.0
+
+	if currentServer != null:
+		currentServer.send_game_state(get_current_client_game_state())
+
+	if currentClient != null:
+		currentClient.send_game_state(get_current_client_game_state())
+
+
+func _start_server() -> void:
+	if currentClient != null:
+		print("STOPPING CLIENT")
+		currentClient.queue_free()
+
+	print("STARTING SERVER")
+	currentServer = SERVER.instantiate()
+	currentServer.websocket_peer_opened.connect(_spawn_remote_player_ship)
+	currentServer.remote_player_update.connect(_update_remote_player)
+	add_child(currentServer)
+
+
+func _start_client() -> void:
+	if currentServer != null:
+		print("STOPPING SERVER")
+		currentServer.queue_free()
+
+	print("JOINING SERVER = Starting client")
+	# ip_address = $IPAddress.text
+	currentClient = CLIENT.instantiate()
+	currentClient.remote_player_update.connect(_update_remote_player)
+	add_child(currentClient)
+
+
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# OLD Non refactored bits
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+func _ready():
+	Events.lives_changed.connect(func(_lives): _check_game_state())
+	Events.enemy_died.connect(_check_game_state)
+
+
 func _spawn_remote_player_ship(name: String) -> void:
 	var myName = ""
 	myName = currentClient._name if currentClient != null else ""
-	myName = currentServer._name if myName == "" and currentServer != null else ""
-	if myName == "":
+	myName = currentServer._name if currentServer != null else ""
+	if myName == "" or name == myName:
 		return
 
 	print("MY NAME: %s - Spawning remote player ship: %s" % [myName, name])
@@ -73,19 +116,6 @@ func _update_remote_player(newRotation: float, newColor: Color, playerName: Stri
 		pivot.set_player_color(newColor)
 		pivot.rotation = newRotation
 
-var time_since_last_update = 0.0
-
-func _process(delta: float):
-	# if time_since_last_update < 0.1:
-	# 	time_since_last_update += delta
-	# 	return ;
-	time_since_last_update = 0.0
-
-	if currentServer != null:
-		currentServer.send_game_state(get_current_client_game_state())
-
-	if currentClient != null:
-		currentClient.send_game_state(get_current_client_game_state())
 
 func _check_game_state():
 	if _level_ending:
@@ -121,19 +151,3 @@ func _start_next_level():
 	add_child(_enemy_group)
 
 	_level_ending = false
-
-
-func _start_server() -> void:
-	print("STARTING SERVER")
-	currentServer = SERVER.instantiate()
-	currentServer.websocket_peer_opened.connect(_spawn_remote_player_ship)
-	currentServer.remote_player_update.connect(_update_remote_player)
-	add_child(currentServer)
-
-
-func _start_client() -> void:
-	print("JOINING SERVER = Starting client")
-	# ip_address = $IPAddress.text
-	currentClient = CLIENT.instantiate()
-	currentClient.remote_player_update.connect(_update_remote_player)
-	add_child(currentClient)

@@ -43,7 +43,7 @@ func _process(_delta: float) -> void:
 	if ready_state == WebSocketPeer.STATE_OPEN:
 		while socket.get_available_packet_count():
 			var message = socket.get_packet().get_string_from_ascii()
-			print("Received message: %s" % message)
+			# print("Server Received message: %s" % message)
 			if message.begins_with('{"game_state'):
 				var game_state = parse_JSON(message)
 				if game_state.size() > 0 and game_state.has("game_state"):

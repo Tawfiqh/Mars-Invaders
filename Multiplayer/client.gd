@@ -22,7 +22,7 @@ func _ready() -> void:
 		log_message("Unable to connect.")
 		set_process(false)
 		return
-	send_player_join()
+	# send_player_join()
 
 
 func _process(_delta: float) -> void:
@@ -36,6 +36,7 @@ func _process(_delta: float) -> void:
 			send_player_join()
 		while socket.get_available_packet_count():
 			var message = socket.get_packet().get_string_from_ascii()
+			# print("Client Received message: %s" % message)
 			if message.begins_with('{"game_state'):
 				var game_state = _parse_json(message)
 				if game_state.size() > 0 and game_state.has("game_state"):

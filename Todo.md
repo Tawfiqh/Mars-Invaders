@@ -7,8 +7,21 @@
 - ✅ Client and server each have names
 - ✅ They log 
 - ✅ Player sends: movement + position 
-- Player sends shots!
+- Player sends shots WITH movement
 - Server sends whole game-state
+- Client react to WHOLE game-state
+- Game.gd should be able to respond to update current_game_based_on_state.
+Game.gd:
+    - Owns and Serialises state
+    - Game engine = game loop + logic
+    - Managing networking => networking objects send signals
+        - Server sends updatedState => game.gd updates based on that
+        - Client 
+    - game loop 
+        = apply updates to game-state from external
+        = One tick of game-loop
+        = Broadcast any state changes
+
 
 1. Multiplayer -- First person = Server (with an ip address)
 2. 2nd player = client but NOT server
