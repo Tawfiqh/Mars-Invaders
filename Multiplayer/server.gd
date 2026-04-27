@@ -3,7 +3,6 @@ extends Node
 ## The port the server will listen on.
 const PORT = 9080
 
-signal websocket_peer_opened(name: String)
 signal remote_player_update(rotation: float, color: Color, name: String)
 
 var tcp_server := TCPServer.new()
@@ -13,7 +12,7 @@ var _prev_ready_state: int = WebSocketPeer.STATE_CLOSED
 
 func log_message(message: String) -> void:
 	var time: String = Time.get_time_string_from_system()
-	print(time + message + "\n")
+	print(time + " - Server: " + message + "\n")
 
 
 func _ready() -> void:
@@ -22,6 +21,8 @@ func _ready() -> void:
 	if tcp_server.listen(PORT) != OK:
 		log_message("Unable to start server.")
 		set_process(false)
+		return
+	log_message("Server started on port: %s" % PORT)
 
 
 func _process(_delta: float) -> void:
@@ -34,27 +35,20 @@ func _process(_delta: float) -> void:
 
 	var ready_state: int = socket.get_ready_state()
 	if ready_state == WebSocketPeer.STATE_OPEN and _prev_ready_state != WebSocketPeer.STATE_OPEN:
-		log_message("WebSocket peer connected.")
 		var message = socket.get_packet().get_string_from_ascii()
 		log_message("WebSocket peer connected: %s" % message)
-		websocket_peer_opened.emit(_name)
 	_prev_ready_state = ready_state
 
 	if ready_state == WebSocketPeer.STATE_OPEN:
 		while socket.get_available_packet_count():
 			var message = socket.get_packet().get_string_from_ascii()
-			# print("Server Received message: %s" % message)
+			# log_message("Server Received message: %s" % message)
 			if message.begins_with('{"game_state'):
 				var game_state = parse_JSON(message)
 				if game_state.size() > 0 and game_state.has("game_state"):
 					handle_game_state(game_state["game_state"])
 				else:
 					log_message("Invalid game state: %s" % message)
-			elif message.begins_with('{"join":'):
-				var json = parse_JSON(message)
-				var join_name = json["join"] as String
-				log_message("Player joined: %s" % join_name)
-				websocket_peer_opened.emit(join_name)
 
 
 func parse_JSON(message: String) -> Dictionary:
@@ -66,7 +60,9 @@ func parse_JSON(message: String) -> Dictionary:
 	return {}
 
 
+# TBC - renmae to serevr handling player update
 func handle_game_state(game_state: Dictionary) -> void:
+	# log_message("Server Handling game state: %s" % game_state)
 	var player_rotation = game_state["player"]["rotation"]
 	var player_color = Color(game_state["player"]["color"])
 	var name = game_state["player"]["name"]
@@ -79,4 +75,9 @@ func _exit_tree() -> void:
 
 func send_game_state(game_state: Dictionary) -> void:
 	var json_string := JSON.stringify(game_state)
-	socket.send_text('{"game_state": %s}' % json_string)
+	var ready_state = socket.get_ready_state()
+	# log_message("ready_state: %s" % ready_state)
+	if ready_state == WebSocketPeer.STATE_OPEN:
+		socket.send_text('{"game_state": %s}' % json_string)
+	# else:
+	# 	log_message("WebSocket State (%s) - peer not open, cannot send game state" % ready_state)

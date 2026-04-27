@@ -57,7 +57,6 @@ func _start_server() -> void:
 
 	print("STARTING SERVER")
 	currentServer = SERVER.instantiate()
-	currentServer.websocket_peer_opened.connect(_spawn_remote_player_ship)
 	currentServer.remote_player_update.connect(_update_remote_player)
 	add_child(currentServer)
 
@@ -84,8 +83,10 @@ func _ready():
 
 func _spawn_remote_player_ship(name: String) -> void:
 	var myName = ""
-	myName = currentClient._name if currentClient != null else ""
-	myName = currentServer._name if currentServer != null else ""
+	if currentClient != null:
+		myName = currentClient._name
+	if currentServer != null:
+		myName = currentServer._name
 	if myName == "" or name == myName:
 		return
 
@@ -102,13 +103,14 @@ func _spawn_remote_player_ship(name: String) -> void:
 
 
 func _update_remote_player(newRotation: float, newColor: Color, playerName: String) -> void:
-	if currentServer != null and playerName == currentServer._name:
+	if currentServer != null and playerName == currentServer._name: # dont update own player
 		return
-	if currentClient != null and playerName == currentClient._name:
+	if currentClient != null and playerName == currentClient._name: # dont update own player
 		return
 
-	# print("Updating remote player: %s" % playerName)
+	print("GAME.GD: Updating remote player: %s" % playerName)
 	if not _remote_players.has(playerName) and playerName != "":
+		print("GAME.GD: Spawning remote player: %s (not found atm)" % playerName)
 		_spawn_remote_player_ship(playerName)
 	if _remote_players.has(playerName):
 		var player = _remote_players[playerName]
