@@ -7,20 +7,25 @@
 - ✅ Client and server each have names
 - ✅ They log 
 - ✅ Player sends: movement + position 
-- Player sends shots WITH movement
+- ✅ Player sends shots WITH movement
+- Server adds rockets sent by player
+
 - Server sends whole game-state
-- Client react to WHOLE game-state
-- Game.gd should be able to respond to update current_game_based_on_state.
+- Client reacts and renders WHOLE game-state
+    - Game.gd should be able to respond to update current_game_based_on_state.
+- Server sends LIVES and score
+
 Game.gd:
     - Owns and Serialises state
     - Game engine = game loop + logic
     - Managing networking => networking objects send signals
         - Server sends updatedState => game.gd updates based on that
         - Client 
-    - game loop 
-        = apply updates to game-state from external
+    - Game loop 
+        = Apply updates to game-state from external
         = One tick of game-loop
         = Broadcast any state changes
+
 
 
 1. Multiplayer -- First person = Server (with an ip address)
@@ -29,6 +34,7 @@ Game.gd:
 4. - NOT just localhost
 5. Different colours!! (random colour on load)
 6. NOT shared life pool
+
 HTTP client, HTTP requests, WebSocket (client) and WebRTC
 
 = SERVER = Pick one player as host - Runs the server
@@ -42,6 +48,7 @@ HTTP client, HTTP requests, WebSocket (client) and WebRTC
 
 
 https://godotengine.org/asset-library/asset/2797
+
 # V1.6 (Hosted in the cloud but still p2p with a cloud instance...)
 https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_dedicated_servers.html#doc-exporting-for-dedicated-servers
 1. Some sort of lobby / matchmaking??? 
@@ -49,6 +56,9 @@ https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_dedicated_
 3. 
 
 
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Gameplay ideas for improvement!
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # V2 = Once you complete it you move to the next planet (which is maybe a touch harder)
 - Random environment generation
     - Different planets 

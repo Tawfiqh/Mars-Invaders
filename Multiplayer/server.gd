@@ -3,7 +3,7 @@ extends Node
 ## The port the server will listen on.
 const PORT = 9080
 
-signal remote_player_update(rotation: float, color: Color, name: String)
+signal client_player_update(rotation: float, color: Color, name: String)
 
 var tcp_server := TCPServer.new()
 var socket := WebSocketPeer.new()
@@ -63,10 +63,7 @@ func parse_JSON(message: String) -> Dictionary:
 # TBC - renmae to serevr handling player update
 func handle_player_state(player_state: Dictionary) -> void:
 	log_message("Server Handling game state: %s" % player_state)
-	var player_rotation = player_state["rotation"]
-	var player_color = Color(player_state["color"])
-	var name = player_state["name"]
-	remote_player_update.emit(player_rotation, player_color, name)
+	client_player_update.emit(player_state)
 
 
 func _exit_tree() -> void:
@@ -79,5 +76,3 @@ func send_game_state(game_state: Dictionary) -> void:
 	# log_message("ready_state: %s" % ready_state)
 	if ready_state == WebSocketPeer.STATE_OPEN:
 		socket.send_text('{"game_state": %s}' % json_string)
-	# else:
-	# 	log_message("WebSocket State (%s) - peer not open, cannot send game state" % ready_state)

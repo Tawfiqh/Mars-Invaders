@@ -23,7 +23,7 @@ var _remote_players: Dictionary = {}
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 func get_player_game_state() -> Dictionary:
-	var player = $"Player SpaceShip/Pivot"
+	var player = $"Player SpaceShip"
 	var name = my_name()
 
 	var player_state: Dictionary = player.serialize_state()
@@ -76,27 +76,30 @@ func _spawn_remote_player_ship(name: String) -> void:
 	var inst = PLAYER_SHIP_SCENE.instantiate()
 	inst.name = name
 	inst.position = Vector2(128, 135.0)
+	inst.is_remote = true
 	add_child(inst)
-	var pivot: Node2D = inst.get_node("Pivot")
-	pivot.is_remote = true
 	_remote_players[name] = inst
 
 
-func _update_remote_player(newRotation: float, newColor: Color, playerName: String) -> void:
+func _update_remote_player(player_state: Dictionary) -> void:
+	var playerName = player_state["name"]
 	if currentServer != null and playerName == currentServer._name: # dont update own player
 		return
 	if currentClient != null and playerName == currentClient._name: # dont update own player
 		return
 
-	print("GAME.GD: Updating remote player: %s" % playerName)
+	# print("GAME.GD: Updating remote player: %s" % playerName)
 	if not _remote_players.has(playerName) and playerName != "":
 		print("GAME.GD: Spawning remote player: %s (not found atm)" % playerName)
 		_spawn_remote_player_ship(playerName)
 	if _remote_players.has(playerName):
 		var player = _remote_players[playerName]
-		var pivot = player.get_node("Pivot")
-		pivot.set_player_color(newColor)
-		pivot.rotation = newRotation
+		player.deserialize_and_update_state(player_state)
+
+func _update_game_state(game_state: Dictionary) -> void:
+	# print("CLIENT - GAME.GD: Updating game state: %s" % game_state)
+	pass
+
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Setup server / client
@@ -108,7 +111,7 @@ func _start_server() -> void:
 
 	print("STARTING SERVER")
 	currentServer = SERVER.instantiate()
-	currentServer.remote_player_update.connect(_update_remote_player)
+	currentServer.client_player_update.connect(_update_remote_player)
 	add_child(currentServer)
 
 
@@ -119,7 +122,7 @@ func _start_client() -> void:
 
 	print("JOINING SERVER = Starting client")
 	currentClient = CLIENT.instantiate()
-	currentClient.remote_player_update.connect(_update_remote_player)
+	currentClient.game_state_update.connect(_update_game_state)
 	add_child(currentClient)
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # OLD Non refactored bits

@@ -25,6 +25,23 @@ func _on_visible_on_screen_notifier_2d_screen_exited():
 func serialize_state() -> Dictionary:
 	return {
 		"rotation": rotation,
-		"position": global_position,
+		"position": position_to_string(position),
 		"uuid": uuid,
 	}
+
+func position_to_string(position: Vector2) -> String:
+	return "%s,%s" % [position.x, position.y]
+
+func get_position_from_string(state_tuple: String) -> Vector2:
+	var parsed_position = Vector2(0, 0)
+	var position_parts = state_tuple.split(",")
+	if position_parts.size() == 2:
+		parsed_position.x = float(position_parts[0])
+		parsed_position.y = float(position_parts[1])
+	print("DESERIALIZE ROCKET POSITION: %s" % parsed_position)
+	return parsed_position
+
+func deserialize_and_update_state(rocket_state: Dictionary) -> void:
+	uuid = rocket_state["uuid"]
+	rotation = rocket_state["rotation"]
+	position = get_position_from_string(rocket_state["position"])

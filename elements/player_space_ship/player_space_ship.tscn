@@ -7,18 +7,16 @@
 radius = 16.0
 
 [node name="SpaceShipMars" type="Node2D" unique_id=2082889787]
-
-[node name="Pivot" type="Node2D" parent="." unique_id=1750294447]
 script = ExtResource("1_7i8tu")
 
-[node name="SpaceShip" type="CharacterBody2D" parent="Pivot" unique_id=1073990265]
+[node name="SpaceShip" type="CharacterBody2D" parent="." unique_id=1073990265]
 position = Vector2(0, -35.85)
 scale = Vector2(0.5, 0.5)
 collision_layer = 2
 
-[node name="Sprite2D" type="Sprite2D" parent="Pivot/SpaceShip" unique_id=1713309705]
+[node name="Sprite2D" type="Sprite2D" parent="SpaceShip" unique_id=1713309705]
 texture = ExtResource("3_fypb4")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Pivot/SpaceShip" unique_id=1099478906]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SpaceShip" unique_id=1099478906]
 position = Vector2(0, 2)
 shape = SubResource("CircleShape2D_186pn")

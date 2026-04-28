@@ -3,7 +3,7 @@ extends Node
 ## The URL we will connect to.
 var websocket_url: String = "ws://localhost:9080"
 
-signal remote_player_update(rotation: float, color: Color, name: String)
+signal game_state_update(game_state: Dictionary)
 
 var socket := WebSocketPeer.new()
 var _prev_ready_state: int = WebSocketPeer.STATE_CLOSED
@@ -67,9 +67,5 @@ func _parse_json(message: String) -> Dictionary:
 
 
 func _handle_game_state(game_state: Dictionary) -> void:
-	log_message("Client Handling game state: %s" % game_state)
-	var player_data = game_state["player"]
-	var player_rotation: float = player_data["rotation"]
-	var player_color := Color(player_data["color"])
-	var player_name: String = player_data["name"]
-	remote_player_update.emit(player_rotation, player_color, player_name)
+	# log_message("Client Handling game state: %s" % game_state)
+	game_state_update.emit(game_state)
