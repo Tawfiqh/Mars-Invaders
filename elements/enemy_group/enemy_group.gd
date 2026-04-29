@@ -39,10 +39,12 @@ func _spawn_enemies():
 			spawned += 1
 			current_enemies[enemy.enemy_id] = enemy
 			enemy.tree_exited.connect(_on_enemy_tree_exited.bind(enemy.enemy_id))
+	_update_all_enemies_facing_center()
 
 
 func _process(delta: float):
 	rotation += orbit_speed * delta
+	_update_all_enemies_facing_center()
 
 func _on_enemy_died():
 	orbit_speed += ORBIT_SPEED_BOOST
@@ -131,5 +133,14 @@ func deserialize_and_update_state(group_state: Dictionary) -> void:
 			print("Removing stale enemy: %s" % enemy_id)
 			stale_enemy.queue_free()
 		current_enemies.erase(enemy_id)
+	_update_all_enemies_facing_center()
 
 	# print("\n\n\n")
+
+
+func _update_all_enemies_facing_center() -> void:
+	for enemy_id in current_enemies:
+		var enemy = current_enemies[enemy_id]
+		if !is_instance_valid(enemy) or enemy.get_parent() != self:
+			continue
+		enemy.face_center(global_position)

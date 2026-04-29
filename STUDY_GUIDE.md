@@ -32,6 +32,13 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Chosen:** `rotation += orbit_speed * delta` — smooth continuous orbit.
 - **Why:** Enemies should feel like they're "drifting" around the planet. Smooth rotation looks more natural for autonomous enemies and contrasts with the player's snappy movement.
 
+### Enemy center-facing orientation (vs. inherited tumble)
+- **Chosen:** Keep orbit motion on the `EnemyGroup`, but run a per-enemy facing pass so each enemy rotates to face the planet center every frame.
+- **Alternative:** Let enemies inherit group rotation only (carousel tumble), or move each enemy independently and derive facing from velocity.
+- **Why this choice:** We keep simple parent-driven orbit math while fixing readability of enemy intent. Players can instantly read that enemies are "locked onto the planet."
+- **Tradeoff:** We add a small per-frame loop over enemies to update facing rotation.
+- **Analogy:** Like people standing on a merry-go-round while always turning their head toward the statue in the middle.
+
 ### Outward bullet direction (vs. always-down)
 - **Chosen:** Enemy bullets fire in the direction from planet center through the enemy's position.
 - **Alternative:** Always fire `Vector2.DOWN` like classic Space Invaders.
@@ -82,12 +89,12 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### EnemyGroup (`elements/enemy_group/enemy_group.gd`)
 - **What:** Orbits all enemies around the planet as a single rotating formation, spawning them dynamically based on the player's score.
-- **How:** On `_ready()`, calculates enemy count: `BASE (12) + points / 6`, capped at 36. Distributes enemies evenly across concentric rings (6 per ring, starting at radius 60, spaced 20px apart). Alternating rings are staggered by half a step for better coverage. Each frame, `rotation += orbit_speed * delta`. When an enemy dies, `orbit_speed` increases by 0.06 rad/s. A `ShotTimer` fires every 3 seconds, picking a random surviving enemy to shoot. Enemy nodes are removed from `current_enemies` when they emit `tree_exited`, so the map stays in sync with scene lifecycle.
+- **How:** On `_ready()`, calculates enemy count: `BASE (12) + points / 6`, capped at 36. Distributes enemies evenly across concentric rings (6 per ring, starting at radius 60, spaced 20px apart). Alternating rings are staggered by half a step for better coverage. Each frame, `rotation += orbit_speed * delta`, then a helper rotates each enemy to face the group center. The same facing pass runs after initial spawn and after multiplayer snapshot apply, so clients do not show one-frame misalignment. When an enemy dies, `orbit_speed` increases by 0.06 rad/s. A `ShotTimer` fires every 3 seconds, picking a random surviving enemy to shoot. Enemy nodes are removed from `current_enemies` when they emit `tree_exited`, so the map stays in sync with scene lifecycle.
 - **Example:** At 0 points → 12 enemies on 2 rings (60px, 80px). At 30 points → 17 enemies on 3 rings (60, 80, 100px). At 144+ points → 36 enemies (max) on 6 rings.
 
 ### Enemy (`elements/enemy/enemy.gd`)
 - **What:** A single invader in the formation.
-- **How:** Passive — it doesn't move itself. Spawned by `EnemyGroup` at a calculated ring position, then carried by the parent group's rotation. When `shot()` is called, it calculates the outward direction from the planet center, spawns a bullet there, and sets the bullet's direction and rotation.
+- **How:** Passive — it doesn't move itself. Spawned by `EnemyGroup` at a calculated ring position, then carried by the parent group's rotation. A `face_center(center_global)` helper computes the inward vector (`center - enemy_position`) and updates the enemy's rotation with a single sprite-forward offset constant. When `shot()` is called, it calculates the outward direction from the planet center, spawns a bullet there, and sets the bullet's direction and rotation.
 - **Example:** Enemy at global position (208, 135), planet center at (128, 135) → outward direction is `(1, 0)` (rightward). Bullet spawns at (218, 135) and flies right.
 
 ### Enemy Bullet (`elements/enemy_bullet/enemy_bullet.gd`)
@@ -126,7 +133,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
 - **Fixed planet center assumption:** The enemy `shot()` function assumes `get_parent().global_position` is the planet center. If the scene hierarchy changes, bullets will fly in wrong directions.
 - **No collision with planet:** Enemy bullets pass through the planet (collision mask doesn't include environment layer). This is intentional but could look odd visually.
-- **Enemy sprites rotate with the group:** Enemies don't counter-rotate to always face outward. They tumble as they orbit — charming but not precisely "facing the player."
+- **Sprite-forward assumption:** Center-facing uses one fixed sprite-forward offset. If enemy art orientation changes later, this constant must be updated or enemies will appear to face the wrong direction.
 - **Win check at ≤1 enemy:** The `<= 1` check accounts for the dying enemy still being in the tree when the signal fires (it calls `queue_free()` which defers removal to end-of-frame). So "≤1 in group" effectively means "zero alive."
 - **One remote WebSocket peer:** The server holds a single `WebSocketPeer`. Only one joining client is supported; a second connection can replace or fight the first depending on timing.
 - **Remote ship lifecycle:** When the joiner disconnects, the host does not remove the spawned `RemotePlayerSpaceShip`. Reconnecting may not spawn again until you restart the server or clear that node.

@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 const BULLET_SCENE = preload("res://elements/enemy_bullet/enemy_bullet.tscn")
+const SPRITE_FORWARD_OFFSET := PI / 2.0
 var enemy_id: String = ""
 
 func _ready():
@@ -11,6 +12,13 @@ func destroy():
 	Globals.change_points(1)
 	Events.enemy_died.emit()
 	queue_free()
+
+
+func face_center(center_global: Vector2) -> void:
+	var inward := center_global - global_position
+	if inward.length_squared() == 0.0:
+		return
+	global_rotation = inward.angle() - SPRITE_FORWARD_OFFSET
 
 func shot():
 	var bullet = BULLET_SCENE.instantiate()
