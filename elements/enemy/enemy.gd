@@ -23,10 +23,10 @@ func face_center(center_global: Vector2) -> void:
 func shot():
 	var bullet = BULLET_SCENE.instantiate()
 	var planet_center = get_parent().global_position
-	var outward = (global_position - planet_center).normalized()
-	bullet.global_position = global_position + outward * 10.0
-	bullet.direction = outward
-	bullet.rotation = outward.angle() - PI / 2.0
+	var inward = (planet_center - global_position).normalized()
+	bullet.global_position = global_position + inward * 10.0
+	bullet.direction = inward
+	bullet.rotation = inward.angle() - PI / 2.0
 	add_child(bullet)
 
 

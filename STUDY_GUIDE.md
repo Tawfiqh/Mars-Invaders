@@ -8,7 +8,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 2. The player's ship orbits the planet at a close radius (~36px) using a **pivot system** — a parent Node2D rotates, and the ship is offset from center as a child.
 3. Enemies orbit the planet at larger radii (60px and 80px) using the same concept — the `EnemyGroup` node sits at the planet center and rotates, carrying all enemies with it.
 4. The player shoots rockets **outward** (away from the planet), which travel through the enemy orbit and can destroy them.
-5. Enemies shoot bullets **outward from the planet** (in the direction from planet center through the enemy), which travel through the player's orbit and can damage the ship.
+5. Enemies shoot bullets **inward toward the planet** (from each enemy toward center), which pass through the player's inner orbit and can damage the ship.
 6. As enemies die, the orbit speed increases — making surviving enemies harder to hit.
 7. When all enemies are destroyed, the scene reloads with a new random planet and fresh enemies — points and lives carry over.
 8. Game ends when the player runs out of lives.
@@ -39,10 +39,10 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Tradeoff:** We add a small per-frame loop over enemies to update facing rotation.
 - **Analogy:** Like people standing on a merry-go-round while always turning their head toward the statue in the middle.
 
-### Outward bullet direction (vs. always-down)
-- **Chosen:** Enemy bullets fire in the direction from planet center through the enemy's position.
+### Inward bullet direction (vs. always-down)
+- **Chosen:** Enemy bullets fire in the direction from each enemy toward planet center.
 - **Alternative:** Always fire `Vector2.DOWN` like classic Space Invaders.
-- **Why:** With a circular layout, "down" has no fixed meaning. Outward-from-center makes bullets travel through the player's orbit regardless of where the enemy is on the circle.
+- **Why:** With a circular layout, "down" has no fixed meaning. Inward-to-center keeps enemy attacks focused on the player ring around the planet.
 
 ### Event-driven client sync (vs. fixed timer updates)
 - **Chosen:** The local player ship emits `player_state_changed` when it rotates to a new step or fires a rocket. `game.gd` listens and sends `send_player_state(...)` only on that signal.
@@ -94,8 +94,8 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### Enemy (`elements/enemy/enemy.gd`)
 - **What:** A single invader in the formation.
-- **How:** Passive — it doesn't move itself. Spawned by `EnemyGroup` at a calculated ring position, then carried by the parent group's rotation. A `face_center(center_global)` helper computes the inward vector (`center - enemy_position`) and updates the enemy's rotation with a single sprite-forward offset constant. When `shot()` is called, it calculates the outward direction from the planet center, spawns a bullet there, and sets the bullet's direction and rotation.
-- **Example:** Enemy at global position (208, 135), planet center at (128, 135) → outward direction is `(1, 0)` (rightward). Bullet spawns at (218, 135) and flies right.
+- **How:** Passive — it doesn't move itself. Spawned by `EnemyGroup` at a calculated ring position, then carried by the parent group's rotation. A `face_center(center_global)` helper computes the inward vector (`center - enemy_position`) and updates the enemy's rotation with a single sprite-forward offset constant. When `shot()` is called, it calculates the inward direction to the planet center, spawns a bullet slightly toward center, and sets the bullet's direction and rotation.
+- **Example:** Enemy at global position (208, 135), planet center at (128, 135) → inward direction is `(-1, 0)` (leftward). Bullet spawns at (198, 135) and flies left toward center.
 
 ### Enemy Bullet (`elements/enemy_bullet/enemy_bullet.gd`)
 - **What:** A projectile that flies in a set direction and damages the player on contact.
