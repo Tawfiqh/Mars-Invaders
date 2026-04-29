@@ -16,10 +16,16 @@ const SPRITESHEET_PATHS := [
 ]
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+var _spritesheet_path: String = ""
 
 
 func _ready() -> void:
-	var atlas: Texture2D = load(SPRITESHEET_PATHS.pick_random())
+	set_spritesheet_path(SPRITESHEET_PATHS.pick_random())
+
+
+func set_spritesheet_path(path: String) -> void:
+	_spritesheet_path = path
+	var atlas: Texture2D = load(path)
 	animated_sprite.sprite_frames = _build_sprite_frames(atlas)
 	animated_sprite.play("default")
 
@@ -29,8 +35,8 @@ func _build_sprite_frames(atlas: Texture2D) -> SpriteFrames:
 	frames.set_animation_loop("default", true)
 	frames.set_animation_speed("default", ANIMATION_SPEED)
 
-	var cols := atlas.get_width() / FRAME_SIZE.x
-	var rows := atlas.get_height() / FRAME_SIZE.y
+	var cols := int(atlas.get_width() / float(FRAME_SIZE.x))
+	var rows := int(atlas.get_height() / float(FRAME_SIZE.y))
 
 	for row in rows:
 		for col in cols:
@@ -43,3 +49,21 @@ func _build_sprite_frames(atlas: Texture2D) -> SpriteFrames:
 			frames.add_frame("default", frame_texture)
 
 	return frames
+
+
+func serialize_state() -> Dictionary:
+	return {
+		"spritesheet_path": _spritesheet_path,
+		"position_x": global_position.x,
+		"position_y": global_position.y,
+	}
+
+
+func deserialize_and_update_state(planet_state: Dictionary) -> void:
+	var path := String(planet_state.get("spritesheet_path", ""))
+	if path != "" and path != _spritesheet_path:
+		set_spritesheet_path(path)
+	global_position = Vector2(
+		float(planet_state.get("position_x", global_position.x)),
+		float(planet_state.get("position_y", global_position.y))
+	)

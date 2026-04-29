@@ -38,12 +38,16 @@ func get_whole_game_state() -> Dictionary:
 
 	var local_player = get_player_game_state()
 	players_serialized.append(local_player)
+
+	var serialized_enemy_group = _enemy_group.serialize_state()
+	var serialized_planet = _planet.serialize_state()
+
 	return {
 		"players": players_serialized,
-		# "enemies": get_enemies_game_state(),
-		# "bullets": get_bullets_game_state(),
-		# "planet": get_planet_game_state(),
-		# "enemy_group": get_enemy_group_game_state(),
+		"enemy_group": serialized_enemy_group,
+		"planet": serialized_planet,
+		"score": Globals.points,
+		"lives": Globals.lives,
 	}
 
 
@@ -104,6 +108,21 @@ func _update_game_state(game_state: Dictionary) -> void:
 
 	for player_state in game_state["players"]:
 		_update_remote_player(player_state)
+
+	if game_state.has("enemy_group"):
+		_enemy_group.deserialize_and_update_state(game_state["enemy_group"])
+	if game_state.has("planet"):
+		_planet.deserialize_and_update_state(game_state["planet"])
+	if game_state.has("score"):
+		var score = int(game_state["score"])
+		if score != Globals.points:
+			Globals.points = score
+			Events.points_changed.emit(Globals.points)
+	if game_state.has("lives"):
+		var lives = int(game_state["lives"])
+		if lives != Globals.lives:
+			Globals.lives = lives
+			Events.lives_changed.emit(Globals.lives)
 
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-

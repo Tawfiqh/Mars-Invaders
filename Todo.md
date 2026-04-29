@@ -8,12 +8,13 @@
 - ✅ They log 
 - ✅ Player sends: movement + position 
 - ✅ Player sends shots WITH movement
-- Server adds rockets sent by player
-
-- Server sends whole game-state
-- Client reacts and renders WHOLE game-state
-    - Game.gd should be able to respond to update current_game_based_on_state.
-- Server sends LIVES and score
+- ✅ Server adds rockets sent by player
+- ✅ Server sends whole game-state (players + enemy group + planet + score + lives)
+    - Enemies have UUID etc like rockets
+- ✅ Client reacts and renders WHOLE game-state
+    - ✅ Game.gd should be able to respond to update current_game_based_on_state.
+- ✅ Server sends LIVES and score
+- enemies need to be fixed to shoot at players!!
 
 Game.gd:
     - Owns and Serialises state
