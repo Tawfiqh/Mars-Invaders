@@ -38,6 +38,7 @@ func _spawn_enemies():
 			add_child(enemy)
 			spawned += 1
 			current_enemies[enemy.enemy_id] = enemy
+			enemy.tree_exited.connect(_on_enemy_tree_exited.bind(enemy.enemy_id))
 
 
 func _process(delta: float):
@@ -52,27 +53,15 @@ func _on_shot_timer_timeout():
 	if enemies.size() > 0:
 		enemies.pick_random().shot()
 
-func remove_enemies(enemies_to_delete: Array[String]) -> void:
-	for enemy_id in enemies_to_delete:
-		var enemy = current_enemies[enemy_id]
-		if is_instance_valid(enemy):
-			enemy.queue_free()
-		current_enemies.erase(enemy_id)
-
 func serialize_state() -> Dictionary:
 	var enemies_state: Array[Dictionary] = []
-
-	var stale_enemies_to_delete: Array[String] = []
 
 	for enemy_id in current_enemies:
 		var enemy = current_enemies[enemy_id]
 		# print("Enemy serialize: %s --xxx ==> %s" % [enemy_id, enemy])
-		if !is_instance_valid(enemy) or enemy.get_parent() != self: # if it has been deleted
-			stale_enemies_to_delete.append(enemy_id)
+		if !is_instance_valid(enemy) or enemy.get_parent() != self:
 			continue
 		enemies_state.append(enemy.serialize_state())
-	
-	remove_enemies(stale_enemies_to_delete)
 
 	return {
 		"rotation": rotation,
@@ -86,7 +75,11 @@ func spawn_enemy(enemy_id: String) -> CharacterBody2D:
 	add_child(enemy)
 	enemy.enemy_id = enemy_id
 	current_enemies[enemy_id] = enemy
+	enemy.tree_exited.connect(_on_enemy_tree_exited.bind(enemy_id))
 	return enemy
+
+func _on_enemy_tree_exited(enemy_id: String) -> void:
+	current_enemies.erase(enemy_id)
 
 func upsert_enemy(enemy_id: String, enemy_state: Dictionary) -> void:
 	 # Get enemy with ID - if the enemy doesn't exist, spawn it

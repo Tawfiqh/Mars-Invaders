@@ -24,10 +24,10 @@ var _remote_players: Dictionary = {}
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 func get_player_game_state() -> Dictionary:
-	var name = my_name()
+	var player_name = my_name()
 
 	var player_state: Dictionary = _local_player.serialize_state()
-	player_state["name"] = name
+	player_state["name"] = player_name
 	return player_state
 
 func get_whole_game_state() -> Dictionary:
@@ -76,19 +76,23 @@ func _on_local_player_state_changed() -> void:
 	if currentServer != null:
 		currentServer.send_game_state(get_whole_game_state())
 
-func _spawn_remote_player_ship(name: String) -> void:
-	if name == my_name():
+func _spawn_remote_player_ship(remote_player_name: String) -> void:
+	if remote_player_name == my_name():
 		return
 
-	print("MY NAME: %s - Spawning remote player ship: %s" % [my_name(), name])
-	if _remote_players.has(name):
+	print("MY NAME: %s - Spawning remote player ship: %s" % [my_name(), remote_player_name])
+	if _remote_players.has(remote_player_name):
 		return
 	var inst = PLAYER_SHIP_SCENE.instantiate()
-	inst.name = name
+	inst.name = remote_player_name
 	inst.position = Vector2(128, 135.0)
 	inst.is_remote = true
+	inst.tree_exited.connect(_on_remote_player_tree_exited.bind(remote_player_name))
 	add_child(inst)
-	_remote_players[name] = inst
+	_remote_players[remote_player_name] = inst
+
+func _on_remote_player_tree_exited(player_name: String) -> void:
+	_remote_players.erase(player_name)
 
 
 func _update_remote_player(player_state: Dictionary) -> void:

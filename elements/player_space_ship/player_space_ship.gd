@@ -113,11 +113,11 @@ func serialize_state() -> Dictionary:
 	var rocket_states: Array[Dictionary] = []
 	for rocket_id in rockets:
 		var rocket = rockets[rocket_id]
-		if rocket == null:
-			rockets.erase(rocket)
+		if !is_instance_valid(rocket):
 			continue
 
 		rocket_states.append(rocket.serialize_state())
+
 
 	return {
 		"rotation": rotation,

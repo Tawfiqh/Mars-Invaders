@@ -66,6 +66,13 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Tradeoff:** Fire cadence is fixed unless code changes the constant. A `Timer` node is more editor-visible but adds extra scene wiring.
 - **Analogy:** Like a camera flash that needs a short recharge before the next photo.
 
+### Lifecycle cleanup with `tree_exited` (vs. periodic stale sweeps)
+- **Chosen:** Registries now remove nodes as soon as the node leaves the scene tree by listening to `tree_exited` (`rockets`, `current_enemies`, and `_remote_players`).
+- **Alternative:** Keep stale-node cleanup inside later loops (for example during serialization) and remove invalid entries there.
+- **Why this choice:** Cleanup happens at the exact lifecycle moment, so dictionaries stay accurate between frames and sync code does less defensive work.
+- **Tradeoff:** You must remember to connect the signal every time a node is spawned, or cleanup will silently stop for that path.
+- **Analogy:** Like immediately crossing a name off a guest list when they leave, instead of waiting until end-of-night cleanup.
+
 ## How Each Piece Works
 
 ### Pivot (`elements/space_ship/pivot.gd`)
@@ -75,7 +82,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### EnemyGroup (`elements/enemy_group/enemy_group.gd`)
 - **What:** Orbits all enemies around the planet as a single rotating formation, spawning them dynamically based on the player's score.
-- **How:** On `_ready()`, calculates enemy count: `BASE (12) + points / 6`, capped at 36. Distributes enemies evenly across concentric rings (6 per ring, starting at radius 60, spaced 20px apart). Alternating rings are staggered by half a step for better coverage. Each frame, `rotation += orbit_speed * delta`. When an enemy dies, `orbit_speed` increases by 0.06 rad/s. A `ShotTimer` fires every 3 seconds, picking a random surviving enemy to shoot.
+- **How:** On `_ready()`, calculates enemy count: `BASE (12) + points / 6`, capped at 36. Distributes enemies evenly across concentric rings (6 per ring, starting at radius 60, spaced 20px apart). Alternating rings are staggered by half a step for better coverage. Each frame, `rotation += orbit_speed * delta`. When an enemy dies, `orbit_speed` increases by 0.06 rad/s. A `ShotTimer` fires every 3 seconds, picking a random surviving enemy to shoot. Enemy nodes are removed from `current_enemies` when they emit `tree_exited`, so the map stays in sync with scene lifecycle.
 - **Example:** At 0 points → 12 enemies on 2 rings (60px, 80px). At 30 points → 17 enemies on 3 rings (60, 80, 100px). At 144+ points → 36 enemies (max) on 6 rings.
 
 ### Enemy (`elements/enemy/enemy.gd`)
@@ -113,6 +120,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Example:** Player taps right twice and fires once. The ship emits 3 `player_state_changed` events. The client sends 3 `player_state` packets instead of sending a constant idle stream.
 - **Scene wiring:** `Multiplayer/Server.tscn` and `Multiplayer/Client.tscn` must reference `server.gd` / `client.gd` on the root `Node`. A wrong script path yields a plain `Node` and missing methods at runtime.
 - **Remote map ownership rule:** `game.gd` stores each remote player by its `Pivot` node in `_remote_players` (not by the ship root). That is important because deserialize/apply methods live on `Pivot`; calling them on the root gives errors like "Nonexistent function ... in base Node2D".
+- **Remote player cleanup rule:** When a remote player node leaves the tree, `tree_exited` removes its entry from `_remote_players` immediately. This lowers the chance of reconnect bugs caused by stale dictionary entries.
 
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
