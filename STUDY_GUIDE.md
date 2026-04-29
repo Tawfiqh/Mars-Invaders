@@ -59,6 +59,13 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Analogy:** Like tracking people by passport number instead of where they stand in a queue.
 - **ID generation rule:** Host assigns an enemy UUID-style string when spawning each enemy (similar to rocket `uuid` generation). Clients only consume these IDs from snapshots.
 
+### Rocket fire cooldown (vs. fire-every-frame spam)
+- **Chosen:** Player firing now uses a fixed cooldown gate (`ROCKET_COOLDOWN_SECONDS`) before another rocket can spawn.
+- **Alternative:** Spawn a rocket every physics frame while the fire key is held, or drive cooldown from a dedicated `Timer` node.
+- **Why this choice:** A local float timer is simple, cheap, and keeps rate-limit logic directly beside input handling.
+- **Tradeoff:** Fire cadence is fixed unless code changes the constant. A `Timer` node is more editor-visible but adds extra scene wiring.
+- **Analogy:** Like a camera flash that needs a short recharge before the next photo.
+
 ## How Each Piece Works
 
 ### Pivot (`elements/space_ship/pivot.gd`)
@@ -83,7 +90,13 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### Rocket (`elements/rocket/rocket.gd`)
 - **What:** Player projectile fired outward from the ship.
-- **How:** Direction is `Vector2.UP.rotated(rotation)` — the rotation is inherited from the pivot, so "up" is "away from planet center". Calls `destroy()` on anything it hits.
+- **How:** Direction is `Vector2.UP.rotated(rotation)` — the rotation is inherited from the pivot, so "up" is "away from planet center". On collision it calls `destroy()` on valid targets and despawns itself. It also listens for screen exit via `VisibleOnScreenNotifier2D` and despawns when it leaves the viewport.
+- **Example:** Rocket misses every enemy and travels beyond the top edge of the screen -> `screen_exited` fires -> rocket queues free, so it does not live forever off-screen.
+
+### Player spaceship (`elements/player_space_ship/player_space_ship.gd`)
+- **What:** Handles local ship control, firing, and outgoing player projectile state.
+- **How:** Reads left/right input for orbit steps, and reads fire input with a cooldown gate so one key hold fires at a controlled cadence. Each spawned rocket is tracked by UUID and removed from the local rocket dictionary when the rocket exits the tree, keeping multiplayer snapshots clean.
+- **Example:** Player holds fire for 1 second with cooldown at 0.2s -> about 5 rockets spawn instead of 60+ physics-frame rockets.
 
 ### Game (`game/game.gd`)
 - **What:** Orchestrates win/loss conditions and level progression.
@@ -110,6 +123,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **One remote WebSocket peer:** The server holds a single `WebSocketPeer`. Only one joining client is supported; a second connection can replace or fight the first depending on timing.
 - **Remote ship lifecycle:** When the joiner disconnects, the host does not remove the spawned `RemotePlayerSpaceShip`. Reconnecting may not spawn again until you restart the server or clear that node.
 - **Signal coverage risk:** Event-driven sync is leaner, but every state-changing action must emit `player_state_changed`. Missing emit calls cause stale remote state.
+- **Off-screen notifier dependency:** Rocket cleanup depends on `VisibleOnScreenNotifier2D` being present and connected in `rocket.tscn`. If someone removes that node or signal connection, rockets can leak off-screen.
 
 ## Key Metrics & Results
 - **Viewport:** 256×240 pixels (NES-style resolution)
@@ -120,4 +134,5 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Orbit speed boost per kill:** +0.06 rad/s
 - **Player discrete positions:** 128 around the circle (2.8° per step)
 - **Shot interval:** Every 3 seconds, one random enemy fires
+- **Player rocket cooldown:** 0.2 seconds between rockets while fire is held
 - **Client state send cadence:** Event-driven (on movement step and shoot), not fixed-interval polling

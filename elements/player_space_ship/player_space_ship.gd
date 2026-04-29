@@ -4,9 +4,11 @@ const ROCKET_SCENE = preload("res://elements/rocket/rocket.tscn")
 signal player_state_changed
 
 const SPEED = 300.0
+const ROCKET_COOLDOWN_SECONDS := 0.75
 var color: Color
 var rockets: Dictionary = {}
 var player_name: String = ""
+var _time_since_last_shot := ROCKET_COOLDOWN_SECONDS
 
 
 @onready var spaceShip = $SpaceShip
@@ -30,8 +32,9 @@ func set_player_color(newColor: Color):
 func _physics_process(delta: float):
 	if is_remote:
 		return
+	_time_since_last_shot += delta
 	var state_changed = false
-	if Input.is_action_just_pressed("ui_accept"):
+	if Input.is_action_pressed("ui_accept") and _can_fire_rocket():
 		shot()
 		state_changed = true
 	var player_moved = _manage_rotation(delta)
@@ -40,7 +43,7 @@ func _physics_process(delta: float):
 	if state_changed:
 		player_state_changed.emit()
 
-func _manage_movementXy(delta: float) -> void:
+func _manage_movementXy(_delta: float) -> void:
 	# var directionX = Input.get_axis("ui_left", "ui_right")
 	# velocity.x = directionX * SPEED
 	var directionY = Input.get_axis("ui_up", "ui_down")
@@ -52,8 +55,16 @@ func shot():
 	var offset = Vector2.UP.rotated(rotation) * 10.0
 	rocket.global_position = spaceShip.global_position + offset
 	rocket.rotation = rotation
+	rocket.tree_exited.connect(_on_rocket_tree_exited.bind(rocket.uuid))
 	add_child(rocket)
 	rockets[rocket.uuid] = rocket
+	_time_since_last_shot = 0.0
+
+func _can_fire_rocket() -> bool:
+	return _time_since_last_shot >= ROCKET_COOLDOWN_SECONDS
+
+func _on_rocket_tree_exited(rocket_uuid: String) -> void:
+	rockets.erase(rocket_uuid)
 
 func take_damage():
 	Globals.change_lives(-1)

@@ -18,21 +18,18 @@
 - stop players spamming rockets with some cooldown
 - remove rockets after they're off screen! = can do this through collision detection
 
-
 - Add some juice
 
 Game.gd:
-    - Owns and Serialises state
-    - Game engine = game loop + logic
-    - Managing networking => networking objects send signals
-        - Server sends updatedState => game.gd updates based on that
-        - Client 
-    - Game loop 
+    - ✅ Owns and Serialises state
+    - ❌ Game engine = game loop + logic -- actually this is mostly handled in the individual entities
+        - Game loop 
         = Apply updates to game-state from external
         = One tick of game-loop
         = Broadcast any state changes
-
-
+    - ✅ Managing networking => networking objects send signals
+        - ✅ Server sends updatedState => game.gd updates based on that
+        - ✅ Client 
 
 1. Multiplayer -- First person = Server (with an ip address)
 2. 2nd player = client but NOT server

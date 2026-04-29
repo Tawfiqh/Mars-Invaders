@@ -16,10 +16,15 @@ func _physics_process(delta):
 		var collider = collision.get_collider()
 		if collider.has_method("destroy"):
 			collider.destroy()
-		queue_free()
+		_despawn()
 
 
 func _on_visible_on_screen_notifier_2d_screen_exited():
+	_despawn()
+
+func _despawn() -> void:
+	if is_queued_for_deletion():
+		return
 	queue_free()
 
 func serialize_state() -> Dictionary:
@@ -29,8 +34,8 @@ func serialize_state() -> Dictionary:
 		"uuid": uuid,
 	}
 
-func position_to_string(position: Vector2) -> String:
-	return "%s,%s" % [position.x, position.y]
+func position_to_string(current_position: Vector2) -> String:
+	return "%s,%s" % [current_position.x, current_position.y]
 
 func get_position_from_string(state_tuple: String) -> Vector2:
 	var parsed_position = Vector2(0, 0)
