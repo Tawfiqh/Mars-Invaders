@@ -99,7 +99,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 
 ### Enemy Bullet (`elements/enemy_bullet/enemy_bullet.gd`)
 - **What:** A projectile that flies in a set direction and damages the player on contact.
-- **How:** Has a `direction` vector (default `Vector2.DOWN`, overridden at spawn). Each physics frame: `move_and_collide(direction * speed * delta)`. If it hits something with `take_damage()`, calls it and self-destructs.
+- **How:** Has a `direction` vector (default `Vector2.DOWN`, overridden at spawn). Each physics frame: `move_and_collide(direction * speed * delta)`. On collision, it checks the collider and walks up parent nodes until it finds `take_damage()`, then calls it and self-destructs. This matters because the colliding physics body can be a child node while damage logic lives on the parent gameplay node.
 - **Example:** Direction set to `(0.7, -0.7)` → bullet flies up-right at 30 px/s until it exits the screen or hits the player.
 
 ### Rocket (`elements/rocket/rocket.gd`)

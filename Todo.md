@@ -15,7 +15,7 @@
     - ✅ Game.gd should be able to respond to update current_game_based_on_state.
 - ✅ Server sends LIVES and score
 - enemies need to be fixed to shoot at players!!
-- stop players spamming rockets with some cooldown
+- ✅ stop players spamming rockets with some cooldown
 - remove rockets after they're off screen! = can do this through collision detection
 
 - Add some juice
