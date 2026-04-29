@@ -132,7 +132,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
 - **Fixed planet center assumption:** The enemy `shot()` function assumes `get_parent().global_position` is the planet center. If the scene hierarchy changes, bullets will fly in wrong directions.
-- **No collision with planet:** Enemy bullets pass through the planet (collision mask doesn't include environment layer). This is intentional but could look odd visually.
+- **Planet layer dependency:** Enemy bullets now collide with the planet, so if planet collision layers are changed later, bullet masks must be kept in sync.
 - **Sprite-forward assumption:** Center-facing uses one fixed sprite-forward offset. If enemy art orientation changes later, this constant must be updated or enemies will appear to face the wrong direction.
 - **Win check at ≤1 enemy:** The `<= 1` check accounts for the dying enemy still being in the tree when the signal fires (it calls `queue_free()` which defers removal to end-of-frame). So "≤1 in group" effectively means "zero alive."
 - **One remote WebSocket peer:** The server holds a single `WebSocketPeer`. Only one joining client is supported; a second connection can replace or fight the first depending on timing.
