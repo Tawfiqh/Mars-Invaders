@@ -44,6 +44,21 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Tradeoff:** If a future gameplay change mutates player state but forgets to emit the signal, remote peers will miss that update.
 - **Analogy:** Like sending a text only when plans change, instead of texting every minute saying "still same plan."
 
+### Whole-game snapshot sync (vs. player-only sync)
+- **Chosen:** Host `game.gd` now includes `enemy_group`, `planet`, `score`, and `lives` in `get_whole_game_state()`. Client applies all of it in `_update_game_state()`.
+- **Alternative:** Sync only players and let each client simulate enemy/planet/state independently.
+- **Why this choice:** The host stays source-of-truth. Joiners render exactly what the host sees, including enemy count/layout and HUD values.
+- **Tradeoff:** Bigger packets and more frequent world updates can cost bandwidth.
+- **Analogy:** Like sending a full whiteboard photo each update, instead of only sending one sticky note change.
+
+### Enemy identity sync by ID (vs. list index sync)
+- **Chosen:** Every enemy has `enemy_id`. Snapshots include `enemy_id`, and clients reconcile enemies by ID.
+- **Alternative:** Match enemies by array position (`enemies[0]`, `enemies[1]`, ...).
+- **Why this choice:** Enemy add/remove order can differ across machines. ID matching keeps each enemy stable and prevents swap/teleport bugs.
+- **Tradeoff:** Slightly more sync logic and a few extra bytes per enemy packet.
+- **Analogy:** Like tracking people by passport number instead of where they stand in a queue.
+- **ID generation rule:** Host assigns an enemy UUID-style string when spawning each enemy (similar to rocket `uuid` generation). Clients only consume these IDs from snapshots.
+
 ## How Each Piece Works
 
 ### Pivot (`elements/space_ship/pivot.gd`)
@@ -78,8 +93,9 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 ### Multiplayer server / client (WIP)
 - **What:** A local WebSocket test server (port 9080) and a client that connects to `ws://localhost:9080`.
 - **How:** `game.gd` calls `SERVER.instantiate()` / `CLIENT.instantiate()` and `add_child()`. The server uses `TCPServer` and `WebSocketPeer.accept_stream()`; the client uses `WebSocketPeer.connect_to_url()`. On `_ready()`, each side picks a random **callsign** from `Globals` name pairs and logs it.
-- **Sync loop:** The server side broadcasts `{"game_state": {...}}` on a short timer and also sends immediately when host input changes local player state. The client side is event-driven: when the local ship changes state (movement step or shoot), `player_space_ship.gd` emits `player_state_changed`; `game.gd` receives it and sends `{"player_state": {...}}` once for that action.
-- **Remote apply:** Incoming game-state packets call `_update_remote_player()` in `game.gd`. That handler ignores local-self updates, spawns a missing remote ship once, and calls `deserialize_and_update_state(...)` on the remote ship.
+- **Sync loop:** The server side broadcasts `{"game_state": {...}}` on a short timer and also sends immediately when host input changes local player state. The snapshot now contains players, enemy-group state, planet state, score, and lives. The client side is event-driven for local updates: when the local ship changes state (movement step or shoot), `player_space_ship.gd` emits `player_state_changed`; `game.gd` sends `{"player_state": {...}}` once for that action.
+- **Remote apply:** Incoming game-state packets call `_update_remote_player()` in `game.gd`. That handler ignores local-self updates, spawns a missing remote ship once, and calls `deserialize_and_update_state(...)` on the remote ship. The same packet also updates enemy-group state, planet state, score, and lives.
+- **Enemy reconcile rule:** `enemy_group.gd` maintains an `enemy_id -> enemy node` map while applying snapshots. Existing IDs are updated, missing IDs are spawned, and stale local IDs are removed.
 - **Rocket sync rule:** Each rocket has a `uuid`. During remote state apply, the player ship now first tries to find an existing rocket with that `uuid`. If not found, it spawns and adds it. If found, it keeps the same node and only updates changed fields like position/rotation.
 - **Example:** Player taps right twice and fires once. The ship emits 3 `player_state_changed` events. The client sends 3 `player_state` packets instead of sending a constant idle stream.
 - **Scene wiring:** `Multiplayer/Server.tscn` and `Multiplayer/Client.tscn` must reference `server.gd` / `client.gd` on the root `Node`. A wrong script path yields a plain `Node` and missing methods at runtime.

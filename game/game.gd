@@ -104,8 +104,7 @@ func _update_remote_player(player_state: Dictionary) -> void:
 		player.deserialize_and_update_state(player_state)
 
 func _update_game_state(game_state: Dictionary) -> void:
-	print("CLIENT - GAME.GD: Updating game state: %s" % game_state)
-
+	# print("CLIENT - GAME.GD: Updating game state: %s" % game_state)
 	for player_state in game_state["players"]:
 		_update_remote_player(player_state)
 
