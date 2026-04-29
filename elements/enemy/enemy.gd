@@ -32,7 +32,10 @@ func serialize_state() -> Dictionary:
 
 func deserialize_and_update_state(state: Dictionary) -> void:
 	enemy_id = String(state.get("enemy_id", enemy_id))
-	position = Vector2(
+	var new_position = Vector2(
 		float(state.get("position_x", position.x)),
 		float(state.get("position_y", position.y))
 	)
+	if new_position != position:
+		print("Enemy position changed: %s -> %s" % [position, new_position])
+	position = new_position

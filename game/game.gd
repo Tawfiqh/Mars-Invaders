@@ -39,8 +39,8 @@ func get_whole_game_state() -> Dictionary:
 	var local_player = get_player_game_state()
 	players_serialized.append(local_player)
 
-	var serialized_enemy_group = _enemy_group.serialize_state()
-	var serialized_planet = _planet.serialize_state()
+	var serialized_enemy_group = _enemy_group.serialize_state() if is_instance_valid(_enemy_group) else {}
+	var serialized_planet = _planet.serialize_state() if is_instance_valid(_planet) else {}
 
 	return {
 		"players": players_serialized,
@@ -174,6 +174,9 @@ func _check_game_state():
 
 
 func _start_next_level():
+	if currentClient != null:
+		print("CLIENT - GAME.GD: Not starting next level as this is a client -- waiting for server to start next level")
+		return
 	var planet_pos := _planet.position
 	var group_pos := _enemy_group.position
 

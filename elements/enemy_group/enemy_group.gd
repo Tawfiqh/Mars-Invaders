@@ -41,8 +41,7 @@ func _spawn_enemies():
 
 
 func _process(delta: float):
-	# rotation += orbit_speed * delta
-	pass
+	rotation += orbit_speed * delta
 
 func _on_enemy_died():
 	orbit_speed += ORBIT_SPEED_BOOST
@@ -53,16 +52,27 @@ func _on_shot_timer_timeout():
 	if enemies.size() > 0:
 		enemies.pick_random().shot()
 
+func remove_enemies(enemies_to_delete: Array[String]) -> void:
+	for enemy_id in enemies_to_delete:
+		var enemy = current_enemies[enemy_id]
+		if is_instance_valid(enemy):
+			enemy.queue_free()
+		current_enemies.erase(enemy_id)
 
 func serialize_state() -> Dictionary:
 	var enemies_state: Array[Dictionary] = []
+
+	var stale_enemies_to_delete: Array[String] = []
+
 	for enemy_id in current_enemies:
 		var enemy = current_enemies[enemy_id]
 		# print("Enemy serialize: %s --xxx ==> %s" % [enemy_id, enemy])
 		if !is_instance_valid(enemy) or enemy.get_parent() != self: # if it has been deleted
-			current_enemies.erase(enemy_id)
+			stale_enemies_to_delete.append(enemy_id)
 			continue
 		enemies_state.append(enemy.serialize_state())
+	
+	remove_enemies(stale_enemies_to_delete)
 
 	return {
 		"rotation": rotation,
@@ -71,6 +81,7 @@ func serialize_state() -> Dictionary:
 	}
 
 func spawn_enemy(enemy_id: String) -> CharacterBody2D:
+	print("Spawning enemy: %s" % enemy_id)
 	var enemy = ENEMY_SCENE.instantiate()
 	add_child(enemy)
 	enemy.enemy_id = enemy_id
@@ -87,7 +98,6 @@ func upsert_enemy(enemy_id: String, enemy_state: Dictionary) -> void:
 func deserialize_and_update_state(group_state: Dictionary) -> void:
 	rotation = float(group_state.get("rotation", rotation))
 	orbit_speed = float(group_state.get("orbit_speed", orbit_speed))
-	print("\n\n\nDESERIALIZE AND UPDATE STATE")
 
 	var enemies_state: Array = group_state.get("enemies", [])
 	# print("ENEMIES STATE: %s" % enemies_state)
@@ -103,17 +113,16 @@ func deserialize_and_update_state(group_state: Dictionary) -> void:
 			continue
 		
 		# Add the enemy to the map and update
-		print("Adding incoming enemy: %s" % incoming_id)
 		incoming_ids[incoming_id] = true
 		upsert_enemy(incoming_id, enemy_state)
 
 
-	print("\n")
-	for incoming_id in incoming_ids:
-		print("Incoming ID: %s" % incoming_id)
-	print("\n")
-	for enemy_id in current_enemies:
-		print("Current enemy: %s" % enemy_id)
+	# print("\n")
+	# for incoming_id in incoming_ids:
+	# 	print("Incoming ID: %s" % incoming_id)
+	# print("\n")
+	# for enemy_id in current_enemies:
+	# 	print("Current enemy: %s" % enemy_id)
 
 	# Get rid of local enemies that are not in the incoming state
 	var enemies_to_remove: Array[String] = []
@@ -130,4 +139,4 @@ func deserialize_and_update_state(group_state: Dictionary) -> void:
 			stale_enemy.queue_free()
 		current_enemies.erase(enemy_id)
 
-	print("\n\n\n")
+	# print("\n\n\n")
