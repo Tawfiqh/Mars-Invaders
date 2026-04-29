@@ -5,12 +5,16 @@ const ROCKET_SCENE = preload("res://elements/rocket/rocket.tscn")
 const SPEED = 300.0
 var color: Color
 var rockets: Dictionary = {}
+var player_name: String = ""
+
+
 @onready var spaceShip = $SpaceShip
 ## When true, this ship is controlled by another machine — no local input or random colour.
 var is_remote: bool = false
 
 func _ready():
 	if not is_remote:
+		player_name = Globals._pick_random_names()
 		random_color()
 
 func random_color():
@@ -93,12 +97,13 @@ func serialize_state() -> Dictionary:
 		if rocket == null:
 			rockets.erase(rocket)
 			continue
-		print("SERIALIZE ROCKET: %s" % rocket.serialize_state())
+
 		rocket_states.append(rocket.serialize_state())
 
 	return {
 		"rotation": rotation,
 		"color": color.to_html(),
+		"name": player_name,
 		"rockets": rocket_states
 	}
 

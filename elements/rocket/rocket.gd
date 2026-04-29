@@ -38,7 +38,7 @@ func get_position_from_string(state_tuple: String) -> Vector2:
 	if position_parts.size() == 2:
 		parsed_position.x = float(position_parts[0])
 		parsed_position.y = float(position_parts[1])
-	print("DESERIALIZE ROCKET POSITION: %s" % parsed_position)
+	# print("DESERIALIZE ROCKET POSITION: %s" % parsed_position)
 	return parsed_position
 
 func deserialize_and_update_state(rocket_state: Dictionary) -> void:

@@ -62,7 +62,7 @@ func parse_JSON(message: String) -> Dictionary:
 
 # TBC - renmae to serevr handling player update
 func handle_player_state(player_state: Dictionary) -> void:
-	log_message("Server Handling game state: %s" % player_state)
+	# print("SERVER - Handling player state: %s" % player_state)
 	client_player_update.emit(player_state)
 
 

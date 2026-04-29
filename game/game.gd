@@ -31,8 +31,15 @@ func get_player_game_state() -> Dictionary:
 	return player_state
 
 func get_whole_game_state() -> Dictionary:
+	var players_serialized = []
+	for player_id in _remote_players:
+		var player = _remote_players[player_id]
+		players_serialized.append(player.serialize_state())
+
+	var local_player = get_player_game_state()
+	players_serialized.append(local_player)
 	return {
-		"player": get_player_game_state(),
+		"players": players_serialized,
 		# "enemies": get_enemies_game_state(),
 		# "bullets": get_bullets_game_state(),
 		# "planet": get_planet_game_state(),
@@ -42,8 +49,11 @@ func get_whole_game_state() -> Dictionary:
 
 var time_since_last_update = 0.0
 func _process(delta: float):
+	var override_update = false
+	if Input.is_action_just_pressed("ui_accept"):
+		override_update = true
 	# Cooldown to prevent spamming the server with updates
-	if time_since_last_update < 0.1:
+	if time_since_last_update < 0.1 and not override_update:
 		time_since_last_update += delta
 		return
 	time_since_last_update = 0.0
@@ -59,15 +69,11 @@ func _process(delta: float):
 # Update state from server / client
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 func my_name() -> String:
-	var name = ""
-	if currentClient != null:
-		name = currentClient._name
-	if currentServer != null:
-		name = currentServer._name
-	return name
+	var local_player = $"Player SpaceShip"
+	return local_player.player_name
 
 func _spawn_remote_player_ship(name: String) -> void:
-	if my_name() == "" or name == my_name():
+	if name == my_name():
 		return
 
 	print("MY NAME: %s - Spawning remote player ship: %s" % [my_name(), name])
@@ -83,12 +89,9 @@ func _spawn_remote_player_ship(name: String) -> void:
 
 func _update_remote_player(player_state: Dictionary) -> void:
 	var playerName = player_state["name"]
-	if currentServer != null and playerName == currentServer._name: # dont update own player
-		return
-	if currentClient != null and playerName == currentClient._name: # dont update own player
+	if playerName == my_name(): # dont update own player
 		return
 
-	# print("GAME.GD: Updating remote player: %s" % playerName)
 	if not _remote_players.has(playerName) and playerName != "":
 		print("GAME.GD: Spawning remote player: %s (not found atm)" % playerName)
 		_spawn_remote_player_ship(playerName)
@@ -97,8 +100,10 @@ func _update_remote_player(player_state: Dictionary) -> void:
 		player.deserialize_and_update_state(player_state)
 
 func _update_game_state(game_state: Dictionary) -> void:
-	# print("CLIENT - GAME.GD: Updating game state: %s" % game_state)
-	pass
+	print("CLIENT - GAME.GD: Updating game state: %s" % game_state)
+
+	for player_state in game_state["players"]:
+		_update_remote_player(player_state)
 
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
