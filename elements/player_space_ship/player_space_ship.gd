@@ -49,7 +49,7 @@ func _manage_movementXy(delta: float) -> void:
 
 func shot():
 	var rocket = ROCKET_SCENE.instantiate()
-	var offset = Vector2.UP.rotated(rotation) * 30.0
+	var offset = Vector2.UP.rotated(rotation) * 10.0
 	rocket.global_position = spaceShip.global_position + offset
 	rocket.rotation = rotation
 	add_child(rocket)

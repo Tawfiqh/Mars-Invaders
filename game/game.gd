@@ -67,9 +67,10 @@ func my_name() -> String:
 
 
 func _on_local_player_state_changed() -> void:
-	if currentClient == null:
-		return
-	currentClient.send_player_state(get_player_game_state())
+	if currentClient != null:
+		currentClient.send_player_state(get_player_game_state())
+	if currentServer != null:
+		currentServer.send_game_state(get_whole_game_state())
 
 func _spawn_remote_player_ship(name: String) -> void:
 	if name == my_name():
