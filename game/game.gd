@@ -17,16 +17,16 @@ var _remote_players: Dictionary = {}
 
 @onready var _planet: Node2D = $Planet
 @onready var _enemy_group: Node2D = $EnemyGroup
+@onready var _local_player = $"Player SpaceShip"
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Process and send current game state to server / client
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 func get_player_game_state() -> Dictionary:
-	var player = $"Player SpaceShip"
 	var name = my_name()
 
-	var player_state: Dictionary = player.serialize_state()
+	var player_state: Dictionary = _local_player.serialize_state()
 	player_state["name"] = name
 	return player_state
 
@@ -49,11 +49,8 @@ func get_whole_game_state() -> Dictionary:
 
 var time_since_last_update = 0.0
 func _process(delta: float):
-	var override_update = false
-	if Input.is_action_just_pressed("ui_accept"):
-		override_update = true
 	# Cooldown to prevent spamming the server with updates
-	if time_since_last_update < 0.1 and not override_update:
+	if time_since_last_update < 0.1:
 		time_since_last_update += delta
 		return
 	time_since_last_update = 0.0
@@ -61,16 +58,18 @@ func _process(delta: float):
 	if currentServer != null:
 		currentServer.send_game_state(get_whole_game_state())
 
-	if currentClient != null:
-		currentClient.send_player_state(get_player_game_state())
-
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Update state from server / client
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 func my_name() -> String:
-	var local_player = $"Player SpaceShip"
-	return local_player.player_name
+	return _local_player.player_name
+
+
+func _on_local_player_state_changed() -> void:
+	if currentClient == null:
+		return
+	currentClient.send_player_state(get_player_game_state())
 
 func _spawn_remote_player_ship(name: String) -> void:
 	if name == my_name():
@@ -135,6 +134,7 @@ func _start_client() -> void:
 func _ready():
 	Events.lives_changed.connect(func(_lives): _check_game_state())
 	Events.enemy_died.connect(_check_game_state)
+	_local_player.player_state_changed.connect(_on_local_player_state_changed)
 
 
 func _check_game_state():

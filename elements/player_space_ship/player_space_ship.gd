@@ -1,6 +1,7 @@
 extends Node2D
 
 const ROCKET_SCENE = preload("res://elements/rocket/rocket.tscn")
+signal player_state_changed
 
 const SPEED = 300.0
 var color: Color
@@ -29,12 +30,15 @@ func set_player_color(newColor: Color):
 func _physics_process(delta: float):
 	if is_remote:
 		return
+	var state_changed = false
 	if Input.is_action_just_pressed("ui_accept"):
 		shot()
-
-	_manage_rotation(delta)
+		state_changed = true
+	var player_moved = _manage_rotation(delta)
+	state_changed = state_changed or player_moved
 	#_manage_movementXy(delta) #TBC - this doesn't work great
-
+	if state_changed:
+		player_state_changed.emit()
 
 func _manage_movementXy(delta: float) -> void:
 	# var directionX = Input.get_axis("ui_left", "ui_right")
@@ -69,7 +73,7 @@ var angular_velocity = 0.0
 var tick_timer = 0.0
 var current_step = 0
 
-func _manage_rotation(delta: float) -> void:
+func _manage_rotation(delta: float) -> bool:
 	var direction = Input.get_axis("ui_left", "ui_right")
 
 	angular_velocity += direction * ACCELERATION * delta
@@ -85,6 +89,10 @@ func _manage_rotation(delta: float) -> void:
 			current_step -= 1
 		current_step = posmod(current_step, STEPS)
 		rotation = current_step * STEP_ANGLE
+		if current_step != 0:
+			return true
+	
+	return false
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Serialize for multiplayer

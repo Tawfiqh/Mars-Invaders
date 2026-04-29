@@ -37,6 +37,13 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Alternative:** Always fire `Vector2.DOWN` like classic Space Invaders.
 - **Why:** With a circular layout, "down" has no fixed meaning. Outward-from-center makes bullets travel through the player's orbit regardless of where the enemy is on the circle.
 
+### Event-driven client sync (vs. fixed timer updates)
+- **Chosen:** The local player ship emits `player_state_changed` when it rotates to a new step or fires a rocket. `game.gd` listens and sends `send_player_state(...)` only on that signal.
+- **Alternative:** Send client state every N milliseconds, even while idle.
+- **Why this choice:** It cuts idle network traffic and ties network sends to real gameplay actions.
+- **Tradeoff:** If a future gameplay change mutates player state but forgets to emit the signal, remote peers will miss that update.
+- **Analogy:** Like sending a text only when plans change, instead of texting every minute saying "still same plan."
+
 ## How Each Piece Works
 
 ### Pivot (`elements/space_ship/pivot.gd`)
@@ -71,10 +78,10 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 ### Multiplayer server / client (WIP)
 - **What:** A local WebSocket test server (port 9080) and a client that connects to `ws://localhost:9080`.
 - **How:** `game.gd` calls `SERVER.instantiate()` / `CLIENT.instantiate()` and `add_child()`. The server uses `TCPServer` and `WebSocketPeer.accept_stream()`; the client uses `WebSocketPeer.connect_to_url()`. On `_ready()`, each side picks a random **callsign** from `Globals` name pairs and logs it.
-- **Sync loop:** Each frame, `game.gd` sends JSON `{"game_state": {...}}` from the host's `Player SpaceShip/Pivot` (rotation, colour hex, player name). The **server** parses incoming `game_state` and emits `game_state_update(rotation, color, name)`. The **client** does the same for packets from the host, so the joiner applies the server's ship on screen. `game.gd` connects `game_state_update` on whichever node exists (`currentServer` or `currentClient`) to `_update_remote_player()`. That handler ignores updates whose `name` matches the local machine's role (host skips their own server name; client skips their own client name), spawns a missing remote ship once, then sets `Pivot.rotation`, `Pivot.set_player_color()`, and `Pivot.is_remote = true` on the spawned instance.
+- **Sync loop:** The server side still broadcasts `{"game_state": {...}}` on a short timer. The client side is now event-driven: when the local ship changes state (movement step or shoot), `player_space_ship.gd` emits `player_state_changed`; `game.gd` receives it and sends `{"player_state": {...}}` once for that action.
+- **Remote apply:** Incoming game-state packets call `_update_remote_player()` in `game.gd`. That handler ignores local-self updates, spawns a missing remote ship once, and calls `deserialize_and_update_state(...)` on the remote ship.
 - **Rocket sync rule:** Each rocket has a `uuid`. During remote state apply, the player ship now first tries to find an existing rocket with that `uuid`. If not found, it spawns and adds it. If found, it keeps the same node and only updates changed fields like position/rotation.
-- **When a client joins:** The client sends `{"join": "<name>"}`. The server parses it and emits `websocket_peer_opened` with the joiner's name so the host can spawn their remote ship. (The first `STATE_OPEN` path on the server also emits once with the server's own name — treat that as test wiring.)
-- **Example:** Host **Start Server**, joiner **Join Server** — host receives join + periodic `game_state` from the client and updates the remote ship; joiner receives `game_state` from the host and sees the host's ship move and recolour.
+- **Example:** Player taps right twice and fires once. The ship emits 3 `player_state_changed` events. The client sends 3 `player_state` packets instead of sending a constant idle stream.
 - **Scene wiring:** `Multiplayer/Server.tscn` and `Multiplayer/Client.tscn` must reference `server.gd` / `client.gd` on the root `Node`. A wrong script path yields a plain `Node` and missing methods at runtime.
 - **Remote map ownership rule:** `game.gd` stores each remote player by its `Pivot` node in `_remote_players` (not by the ship root). That is important because deserialize/apply methods live on `Pivot`; calling them on the root gives errors like "Nonexistent function ... in base Node2D".
 
@@ -86,6 +93,7 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Win check at ≤1 enemy:** The `<= 1` check accounts for the dying enemy still being in the tree when the signal fires (it calls `queue_free()` which defers removal to end-of-frame). So "≤1 in group" effectively means "zero alive."
 - **One remote WebSocket peer:** The server holds a single `WebSocketPeer`. Only one joining client is supported; a second connection can replace or fight the first depending on timing.
 - **Remote ship lifecycle:** When the joiner disconnects, the host does not remove the spawned `RemotePlayerSpaceShip`. Reconnecting may not spawn again until you restart the server or clear that node.
+- **Signal coverage risk:** Event-driven sync is leaner, but every state-changing action must emit `player_state_changed`. Missing emit calls cause stale remote state.
 
 ## Key Metrics & Results
 - **Viewport:** 256×240 pixels (NES-style resolution)
@@ -96,3 +104,4 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Orbit speed boost per kill:** +0.06 rad/s
 - **Player discrete positions:** 128 around the circle (2.8° per step)
 - **Shot interval:** Every 3 seconds, one random enemy fires
+- **Client state send cadence:** Event-driven (on movement step and shoot), not fixed-interval polling
