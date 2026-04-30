@@ -1,7 +1,7 @@
 extends Node
 
 ## The port the server will listen on.
-const PORT = 9080
+var _port: int = 9080
 
 signal client_player_update(rotation: float, color: Color, name: String)
 
@@ -18,11 +18,11 @@ func log_message(message: String) -> void:
 func _ready() -> void:
 	_name = Globals._pick_random_names()
 	log_message("Server ready — name: %s" % _name)
-	if tcp_server.listen(PORT) != OK:
+	if tcp_server.listen(_port) != OK:
 		log_message("Unable to start server.")
 		set_process(false)
 		return
-	log_message("Server started on port: %s" % PORT)
+	log_message("Server started on port: %s" % _port)
 
 
 func _process(_delta: float) -> void:
@@ -76,3 +76,7 @@ func send_game_state(game_state: Dictionary) -> void:
 	# log_message("ready_state: %s" % ready_state)
 	if ready_state == WebSocketPeer.STATE_OPEN:
 		socket.send_text('{"game_state": %s}' % json_string)
+
+
+func configure_port(port: int = 9080) -> void:
+	_port = max(port, 1)

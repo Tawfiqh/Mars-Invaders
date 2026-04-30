@@ -1,7 +1,9 @@
 extends Node
 
-## The URL we will connect to.
-var websocket_url: String = "ws://localhost:9080"
+## Connection settings configured by game UI before start.
+var _host_ip: String = "localhost"
+var _port: int = 9080
+var websocket_url: String = ""
 
 signal game_state_update(game_state: Dictionary)
 
@@ -19,6 +21,7 @@ func log_message(message: String) -> void:
 func _ready() -> void:
 	_name = Globals._pick_random_names()
 	log_message("Client ready — name: %s" % _name)
+	websocket_url = "ws://%s:%s" % [_host_ip, _port]
 	if socket.connect_to_url(websocket_url) != OK:
 		log_message("Unable to connect.")
 		set_process(false)
@@ -69,3 +72,10 @@ func _parse_json(message: String) -> Dictionary:
 func _handle_game_state(game_state: Dictionary) -> void:
 	# log_message("Client Handling game state: %s" % game_state)
 	game_state_update.emit(game_state)
+
+
+func configure_connection(host_ip: String, port: int = 9080) -> void:
+	_host_ip = host_ip.strip_edges()
+	if _host_ip.is_empty():
+		_host_ip = "localhost"
+	_port = max(port, 1)

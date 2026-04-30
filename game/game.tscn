@@ -9,25 +9,55 @@
 [ext_resource type="PackedScene" uid="uid://co516i3v8or2b" path="res://elements/player_space_ship/player_space_ship.tscn" id="7_u5opy"]
 [ext_resource type="PackedScene" uid="uid://ct201yc8t5q7u" path="res://elements/planet/planet.tscn" id="8_y36n6"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_y36n6"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+
 [node name="Game" type="Node2D" unique_id=145701423]
 script = ExtResource("1_2fm81")
 
 [node name="HUD" parent="." unique_id=1874022708 instance=ExtResource("1_76xuu")]
 
-[node name="Button2" type="Button" parent="HUD" unique_id=743493523]
-offset_left = 20.0
-offset_top = 32.0
-offset_right = 120.0
-offset_bottom = 63.0
+[node name="MultiplayerControls" type="PanelContainer" parent="HUD" unique_id=96604320]
+offset_left = 23.61
+offset_top = 3.495
+offset_right = 203.61
+offset_bottom = 147.495
+scale = Vector2(0.345, 0.345)
+theme_override_styles/panel = SubResource("StyleBoxFlat_y36n6")
+
+[node name="MarginContainer" type="MarginContainer" parent="HUD/MultiplayerControls" unique_id=162203488]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD/MultiplayerControls/MarginContainer" unique_id=2029899228]
+layout_mode = 2
+
+[node name="CreateServerButton" type="Button" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=369651348]
+layout_mode = 2
+focus_mode = 0
+text = "Create Server"
+
+[node name="JoinServerButton" type="Button" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=2099863496]
+layout_mode = 2
 focus_mode = 0
 text = "Join Server"
 
-[node name="Button" type="Button" parent="HUD" unique_id=209929375]
-offset_left = 22.0
-offset_right = 122.0
-offset_bottom = 31.0
-focus_mode = 0
-text = "Start Server"
+[node name="IpAddressInput" type="LineEdit" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=1429723289]
+layout_mode = 2
+text = "192.168."
+placeholder_text = "Host IP address"
+
+[node name="PortInput" type="LineEdit" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=1023889346]
+visible = false
+layout_mode = 2
+text = "9080"
+placeholder_text = "Port"
+
+[node name="ConnectionStatusLabel" type="Label" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=958660003]
+layout_mode = 2
 
 [node name="Backround" type="Sprite2D" parent="." unique_id=1108229954]
 texture_repeat = 2
@@ -54,5 +84,5 @@ position = Vector2(155, 81)
 [node name="Player SpaceShip" parent="." unique_id=2082889787 instance=ExtResource("7_u5opy")]
 position = Vector2(128, 135)
 
-[connection signal="pressed" from="HUD/Button2" to="." method="_start_client"]
-[connection signal="pressed" from="HUD/Button" to="." method="_start_server"]
+[connection signal="pressed" from="HUD/MultiplayerControls/MarginContainer/VBoxContainer/CreateServerButton" to="." method="_start_server"]
+[connection signal="pressed" from="HUD/MultiplayerControls/MarginContainer/VBoxContainer/JoinServerButton" to="." method="_start_client"]
