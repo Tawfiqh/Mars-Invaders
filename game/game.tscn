@@ -45,16 +45,9 @@ layout_mode = 2
 focus_mode = 0
 text = "Join Server"
 
-[node name="IpAddressInput" type="LineEdit" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=1429723289]
+[node name="RoomCodeInput" type="LineEdit" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=1429723289]
 layout_mode = 2
-text = "192.168."
-placeholder_text = "Host IP address"
-
-[node name="PortInput" type="LineEdit" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=1023889346]
-visible = false
-layout_mode = 2
-text = "9080"
-placeholder_text = "Port"
+placeholder_text = "Room code"
 
 [node name="ConnectionStatusLabel" type="Label" parent="HUD/MultiplayerControls/MarginContainer/VBoxContainer" unique_id=958660003]
 layout_mode = 2

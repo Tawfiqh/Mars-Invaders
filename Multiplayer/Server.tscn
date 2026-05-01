@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://covh76f25g0ia"]
+[gd_scene format=3 uid="uid://qsorab8g5k73"]
 
-[ext_resource type="Script" uid="uid://cy7l8ekpkbmu0" path="res://Multiplayer/server.gd" id="1_server"]
+[ext_resource type="Script" path="res://Multiplayer/server.gd" id="1_server"]
 
 [node name="Server" type="Node" unique_id=551731163]
 script = ExtResource("1_server")

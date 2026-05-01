@@ -23,6 +23,7 @@ config/icon="res://icon.svg"
 
 Events="*res://core/events.gd"
 Globals="*res://core/globals.gd"
+Network="*res://Multiplayer/network.gd"
 
 [display]
 
