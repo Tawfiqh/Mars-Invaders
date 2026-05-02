@@ -14,10 +14,10 @@
 - ✅ Client reacts and renders WHOLE game-state
     - ✅ Game.gd should be able to respond to update current_game_based_on_state.
 - ✅ Server sends LIVES and score
-- enemies need to be fixed to shoot at players!!
+- ✅ enemies need to be fixed to shoot at players!!
 - ✅ stop players spamming rockets with some cooldown
 - remove rockets after they're off screen! = can do this through collision detection
-
+- Fix issues with enemy bullets being synced (and not generated client side)
 - Add some juice
 
 Game.gd:

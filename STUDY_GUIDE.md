@@ -117,25 +117,27 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **How:** Listens to `lives_changed` and `enemy_died` signals. If lives reach 0, shows game-over screen. If all enemies are destroyed, emits `level_cleared`, waits 1 second, then swaps out just the Planet and EnemyGroup nodes — `queue_free()` the old ones, wait a frame, then `add_child()` fresh instances. The planet script picks a random spritesheet in `_ready()`, so each new instance looks different. The player, HUD, background, and walls stay untouched.
 - **Example:** Player kills last enemy → `_check_game_state()` sees ≤1 enemy in group → emits `level_cleared` → waits 1s → `_start_next_level()` frees old planet/enemies, spawns new ones → player keeps position, points, and lives.
 
-### Multiplayer server / client (WIP)
-- **What:** A LAN host/join flow where one player clicks "Create Server" and shares their local IP, while joining players type that IP and connect on the selected port.
-- **How:** `game.gd` owns a small multiplayer control panel (Create Server, Join Server, IP input, port input, status label). Host path instantiates `Server.tscn`, sets the port, detects a private local IPv4 address, and shows `Hosting on: <ip>:<port>`. Join path validates the typed IPv4, instantiates `Client.tscn`, and passes host + port into `configure_connection(...)`. On `_ready()`, each side picks a random **callsign** from `Globals` name pairs and logs it.
-- **Sync loop:** The server side broadcasts `{"game_state": {...}}` on a short timer and also sends immediately when host input changes local player state. The snapshot now contains players, enemy-group state, planet state, score, and lives. The client side is event-driven for local updates: when the local ship changes state (movement step or shoot), `player_space_ship.gd` emits `player_state_changed`; `game.gd` sends `{"player_state": {...}}` once for that action.
-- **Remote apply:** Incoming game-state packets call `_update_remote_player()` in `game.gd`. That handler ignores local-self updates, spawns a missing remote ship once, and calls `deserialize_and_update_state(...)` on the remote ship. The same packet also updates enemy-group state, planet state, score, and lives.
-- **Enemy reconcile rule:** `enemy_group.gd` maintains an `enemy_id -> enemy node` map while applying snapshots. Existing IDs are updated, missing IDs are spawned, and stale local IDs are removed.
-- **Rocket sync rule:** Each rocket has a `uuid`. During remote state apply, the player ship now first tries to find an existing rocket with that `uuid`. If not found, it spawns and adds it. If found, it keeps the same node and only updates changed fields like position/rotation.
-- **Example:** Player taps right twice and fires once. The ship emits 3 `player_state_changed` events. The client sends 3 `player_state` packets instead of sending a constant idle stream.
-- **Scene wiring:** `Multiplayer/Server.tscn` and `Multiplayer/Client.tscn` must reference `server.gd` / `client.gd` on the root `Node`. A wrong script path yields a plain `Node` and missing methods at runtime.
-- **Connection UX rule:** After host or join starts, the create/join controls are hidden to reduce accidental mode switching, while the status label stays visible so players can confirm the active endpoint.
-- **Remote map ownership rule:** `game.gd` stores each remote player by its `Pivot` node in `_remote_players` (not by the ship root). That is important because deserialize/apply methods live on `Pivot`; calling them on the root gives errors like "Nonexistent function ... in base Node2D".
-- **Remote player cleanup rule:** When a remote player node leaves the tree, `tree_exited` removes its entry from `_remote_players` immediately. This lowers the chance of reconnect bugs caused by stale dictionary entries.
+### Multiplayer (WebRTC P2P, browser-friendly)
+- **What:** Peer-to-peer multiplayer that works from an HTML5 export — any number of browsers can join the same game over LAN (or internet) with no native server. One peer is the *host* (game-state authority); others are *clients*.
+- **Why this design:** Browsers can't accept incoming TCP/UDP, so the previous `TCPServer + WebSocketPeer` design only worked from a native build. WebRTC sidesteps that — browsers can both initiate and receive WebRTC data channel connections.
+- **Pieces:**
+  1. **`signalling/server.js`** — tiny Node.js WebSocket relay (deployed to Railway). Carries only the WebRTC handshake (SDP offers/answers + ICE candidates). Stateless, no game logic. Adapted from Godot's official `webrtc_signaling` demo.
+  2. **`addons/webrtc/`** — Godot's `webrtc-native` GDExtension (provides `WebRTCMultiplayerPeer` for native builds; HTML5 export uses the browser's built-in WebRTC).
+  3. **`Multiplayer/network.gd`** — autoload (`Network`) that owns the signalling WebSocket + `WebRTCMultiplayerPeer` and exposes a small API: `host_room()`, `join_room(code)`, `send_player_state()`, `send_game_state()`. Hooks `multiplayer.multiplayer_peer = rtc` so Godot's high-level RPC system carries the messages.
+  4. **`game/game.gd`** — calls `Network.send_*` and listens for `Network.peer_player_update` / `Network.game_state_update`. Identical packet shape to the old WebSocket flow, so per-feature sync code (rockets, enemies, planet, score) didn't change.
+- **Connection flow:**
+  1. Host clicks Create Server → `Network.host_room()` opens WS to signalling server, sends `JOIN` with empty room code → server picks a random 16-char room code, returns it → UI displays `Room: <code>`.
+  2. Joiner types code, clicks Join Server → `Network.join_room(code)` opens WS, sends `JOIN <code>` → server announces both peers to each other via `PEER_CONNECT`.
+  3. The peer with the lower id creates a WebRTC offer → relayed via signalling → other side answers → ICE candidates trickle through signalling → data channel opens.
+  4. Once the data channel is up, `multiplayer.multiplayer_peer = rtc` activates RPC. Host's `_receive_game_state` RPC fires on every client; clients' `_receive_player_state` RPCs fire on the host.
+- **Topology:** **Star**, not mesh — `WebRTCMultiplayerPeer.create_server()` on host, `create_client(my_id)` on joiners. Clients only have a direct link to host; they don't talk to each other. This matches the existing "host owns world state" design.
+- **Why a STUN server (`stun:stun.l.google.com:19302`):** Public STUN helps two peers behind NATs discover each other's reachable addresses. On a single LAN it harmlessly converges to direct host candidates; for non-LAN play it lets most home networks connect without a TURN relay.
+- **Sync semantics (unchanged from old design):** Host broadcasts a full snapshot (`{"players": [...], "enemy_group": ..., "planet": ..., "score": ..., "lives": ...}`) at ≤10 Hz. Clients send only their own player state, event-driven on `player_state_changed`. Snapshot reconcile rules for enemies (by `enemy_id`) and rockets (by `uuid`) are unchanged.
 
-### LAN IP selection strategy (host)
-- **Chosen:** Pick the first local private IPv4 in this order: `192.168.x.x`, then `10.x.x.x`, then `172.16-31.x.x`, then fallback `127.0.0.1`.
-- **Alternative:** Force manual host IP entry, or try to discover a public IP through an online service.
-- **Why this choice:** It works offline and gives a useful LAN address for most home router setups without extra user steps.
-- **Tradeoff:** Machines with multiple active adapters (VPN + Wi-Fi + Ethernet) can still show a non-ideal address.
-- **Analogy:** Like choosing your "home door" first, then side doors, then emergency door if none are available.
+### Why a signalling server is unavoidable
+- WebRTC peers must exchange SDP descriptions + ICE candidates *before* the P2P link exists. That exchange itself can't ride over WebRTC (chicken-and-egg), and browsers can't listen for raw incoming sockets to act as the rendezvous.
+- The only true zero-server alternative is **manual copy-paste signalling** — host generates an offer string, pastes it into Discord, joiner pastes back an answer. Workable for two players, miserable beyond that.
+- A Railway-hosted WebSocket relay solves it cleanly: signalling traffic is a few KB per game-start, so the free tier is more than enough, and players never see "signalling server" — they just type a room code.
 
 ## Things That Don't Work Well
 - **Bullet persistence:** Bullets are children of the enemy that fired them. If that enemy is destroyed while a bullet is in flight, the bullet is also freed. This could cause "disappearing bullet" glitches.
@@ -143,9 +145,10 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Planet layer dependency:** Enemy bullets now collide with the planet, so if planet collision layers are changed later, bullet masks must be kept in sync.
 - **Sprite-forward assumption:** Center-facing uses one fixed sprite-forward offset. If enemy art orientation changes later, this constant must be updated or enemies will appear to face the wrong direction.
 - **Win check at ≤1 enemy:** The `<= 1` check accounts for the dying enemy still being in the tree when the signal fires (it calls `queue_free()` which defers removal to end-of-frame). So "≤1 in group" effectively means "zero alive."
-- **One remote WebSocket peer:** The server holds a single `WebSocketPeer`. Only one joining client is supported; a second connection can replace or fight the first depending on timing.
-- **No reconnect controls:** The multiplayer controls hide after starting host/join and currently do not include a built-in "disconnect/back" button in the same UI.
-- **Remote ship lifecycle:** When the joiner disconnects, the host does not remove the spawned `RemotePlayerSpaceShip`. Reconnecting may not spawn again until you restart the server or clear that node.
+- **No reconnect controls:** The multiplayer controls hide after host/join starts; there is no in-UI "disconnect/back" button to leave a session and start a new one without reloading.
+- **Disconnected peer leaves a stale ship:** When a client disconnects, `Network.peer_disconnected_from_session` fires with a peer id, but `_remote_players` is keyed by player *name*. Without a peer-id↔name map, the disconnected ship lingers until the next level reload. Logged but not cleaned up.
+- **No TURN relay configured:** Two players behind symmetric NATs (rare — mostly corporate networks) will fail to connect. STUN-only works for ~95% of home networks; full reliability would need a TURN server (paid or self-hosted).
+- **Signalling URL is hardcoded:** `DEFAULT_SIGNALLING_URL` in `network.gd` defaults to `ws://localhost:9080`. Change it to the deployed Railway `wss://...` URL before exporting for end users.
 - **Signal coverage risk:** Event-driven sync is leaner, but every state-changing action must emit `player_state_changed`. Missing emit calls cause stale remote state.
 - **Off-screen notifier dependency:** Rocket cleanup depends on `VisibleOnScreenNotifier2D` being present and connected in `rocket.tscn`. If someone removes that node or signal connection, rockets can leak off-screen.
 
@@ -160,5 +163,6 @@ A Space Invaders-inspired game built in Godot 4 where gameplay revolves around a
 - **Shot interval:** Every 3 seconds, one random enemy fires
 - **Player rocket cooldown:** 0.2 seconds between rockets while fire is held
 - **Client state send cadence:** Event-driven (on movement step and shoot), not fixed-interval polling
-- **Default join IP prefix:** `192.168.` to guide LAN usage
-- **Default multiplayer port:** `9080` (editable in UI)
+- **Signalling protocol:** JSON over WebSocket; 8 message types (JOIN/ID/PEER_CONNECT/PEER_DISCONNECT/OFFER/ANSWER/CANDIDATE/SEAL). Same wire format as Godot's official `webrtc_signaling` demo.
+- **Default signalling port (local):** `9080`
+- **Room code length:** 16 alphanumeric characters (server-generated)

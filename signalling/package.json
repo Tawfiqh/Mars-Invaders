@@ -1,0 +1,16 @@
+{
+  "name": "godot-invaders-signalling",
+  "version": "1.0.0",
+  "description": "WebRTC signalling relay for godot-invaders LAN multiplayer.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}
