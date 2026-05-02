@@ -3,3 +3,4 @@
 
 # Mac-specific ignores
 *.DS_Store
+dist/index.wasm
