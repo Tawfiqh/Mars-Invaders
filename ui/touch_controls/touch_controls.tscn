@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3 uid="uid://bqj8touchctrl01"]
+
+[ext_resource type="Script" path="res://ui/touch_controls/touch_controls.gd" id="1_touch"]
+
+[node name="TouchControlsLayer" type="CanvasLayer"]
+layer = 100
+visible = false
+script = ExtResource("1_touch")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Spacer" type="Control" parent="MarginContainer/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="BottomRow" type="HBoxContainer" parent="MarginContainer/VBox"]
+layout_mode = 2
+mouse_filter = 0
+
+[node name="TurnLeft" type="Button" parent="MarginContainer/VBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+focus_mode = 0
+text = "◀"
+
+[node name="MidSpacer" type="Control" parent="MarginContainer/VBox/BottomRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="TurnRight" type="Button" parent="MarginContainer/VBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+focus_mode = 0
+text = "▶"
+
+[node name="Fire" type="Button" parent="MarginContainer/VBox/BottomRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 56)
+layout_mode = 2
+focus_mode = 0
+text = "Fire"

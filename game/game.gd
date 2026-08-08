@@ -25,6 +25,7 @@ var _remote_players: Dictionary = {}
 @onready var _ip_address_input: LineEdit = $HUD/MultiplayerControls/MarginContainer/VBoxContainer/IpAddressInput
 @onready var _port_input: LineEdit = $HUD/MultiplayerControls/MarginContainer/VBoxContainer/PortInput
 @onready var _connection_status_label: Label = $HUD/MultiplayerControls/MarginContainer/VBoxContainer/ConnectionStatusLabel
+@onready var _touch_controls: CanvasLayer = $TouchControlsLayer
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # Process and send current game state to server / client
@@ -183,11 +184,14 @@ func _read_port_input() -> int:
 	return parsed_port
 
 
-func _set_multiplayer_controls_visible(visible: bool) -> void:
-	_create_server_button.visible = visible
-	_join_server_button.visible = visible
-	_ip_address_input.visible = visible
-	# _port_input.visible = visible
+func _set_multiplayer_controls_visible(show_lobby_panel: bool) -> void:
+	var is_web := OS.has_feature("web")
+	_create_server_button.visible = show_lobby_panel and not is_web
+	_create_server_button.disabled = is_web
+	_join_server_button.visible = show_lobby_panel
+	_ip_address_input.visible = show_lobby_panel
+	# _port_input.visible = show_lobby_panel
+	_refresh_touch_overlay()
 
 
 func _is_valid_ipv4(value: String) -> bool:
@@ -228,14 +232,25 @@ func _is_172_private_range(address: String) -> bool:
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 # OLD Non refactored bits
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+func _refresh_touch_overlay() -> void:
+	if _touch_controls == null:
+		return
+	var menu_open := _join_server_button.visible
+	_touch_controls.visible = OS.has_feature("web") and not menu_open
+
+
 func _ready():
 	Events.lives_changed.connect(func(_lives): _check_game_state())
 	Events.enemy_died.connect(_check_game_state)
 	_local_player.player_state_changed.connect(_on_local_player_state_changed)
 	_ip_address_input.text = DEFAULT_IP_PREFIX
 	_port_input.text = str(DEFAULT_MULTIPLAYER_PORT)
-	_connection_status_label.text = ""
+	if OS.has_feature("web"):
+		_connection_status_label.text = "Desktop hosts. Enter LAN IP, tap Join."
+	else:
+		_connection_status_label.text = ""
 	_set_multiplayer_controls_visible(true)
+	_refresh_touch_overlay()
 
 
 func _check_game_state():

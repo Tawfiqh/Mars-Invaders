@@ -34,7 +34,7 @@ func _physics_process(delta: float):
 		return
 	_time_since_last_shot += delta
 	var state_changed = false
-	if Input.is_action_pressed("ui_accept") and _can_fire_rocket():
+	if (Input.is_action_pressed("ui_accept") or Globals.touch_fire_held) and _can_fire_rocket():
 		shot()
 		state_changed = true
 	var player_moved = _manage_rotation(delta)
@@ -85,7 +85,11 @@ var tick_timer = 0.0
 var current_step = 0
 
 func _manage_rotation(delta: float) -> bool:
-	var direction = Input.get_axis("ui_left", "ui_right")
+	var direction := clampf(
+		Input.get_axis("ui_left", "ui_right") + Globals.touch_steer_axis,
+		-1.0,
+		1.0,
+	)
 
 	angular_velocity += direction * ACCELERATION * delta
 	angular_velocity = move_toward(angular_velocity, 0.0, DAMPING * delta)

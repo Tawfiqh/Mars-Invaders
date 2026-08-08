@@ -3,6 +3,10 @@ extends Node
 var points := 0
 var lives := 3
 
+## On-screen touch overlay sets these; local player merges with keyboard/gamepad in `player_space_ship.gd`.
+var touch_steer_axis: float = 0.0
+var touch_fire_held: bool = false
+
 const NAME_POOL: Array[String] = [
 	"Orion", "Vega", "Sirius", "Rigel", "Altair",
 	"Cygnus", "Draco", "Nova", "Pulsar", "Quasar",
